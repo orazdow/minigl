@@ -26,6 +26,7 @@ function createShaderProgram(gl, obj){
 function createBuffers(gl, obj){
 	for(let key in obj.arrays){ 
 		let attr = obj.arrays[key];
+		if(attr.location < 0) continue
 		let stride = attr.stride||0, offset = attr.offset||0;
 		if(typeof attr.data === 'string'){ 
 			attr.buffer = obj.arrays[attr.data].buffer;
@@ -50,6 +51,7 @@ function createBuffers(gl, obj){
 			}
 		}
 	}
+	setCount(obj);
 	gl.bindVertexArray(null);
 	if(typeof obj.drawMode === 'string') obj.drawMode = gl[obj.drawMode];
 	else if (typeof obj.drawMode !== 'number') obj.drawMode = gl.TRIANGLES;
@@ -73,15 +75,21 @@ function enableAttributes(gl, obj){
 
 function setUniforms(gl, obj){
 	for(let u in obj.uniforms)
-		obj.uniformSetters[u](gl, obj.uniforms[u]);
+		if(obj.uniformSetters[u])obj.uniformSetters[u](gl, obj.uniforms[u]);
 }
 
 function drawObj(gl, obj){
-	let count = obj.arrays.indices ? obj.arrays.indices.data.length : 
-	obj.arrays.position.data.length/(obj.arrays.position.stride||obj.arrays.position.components);
 	if(obj.arrays.indices)
-		gl.drawElements(obj.drawMode, count, gl.UNSIGNED_SHORT, 0);
-	else gl.drawArrays(obj.drawMode, 0, count);
+		gl.drawElements(obj.drawMode, obj.count, gl.UNSIGNED_SHORT, 0);
+	else gl.drawArrays(obj.drawMode, 0, obj.count);
+}
+
+function setCount(obj){
+	if(obj.arrays.position){
+		let count = obj.arrays.indices ? obj.arrays.indices.data.length : 
+		obj.arrays.position.data.length/(obj.arrays.position.stride||obj.arrays.position.components);
+		obj.count = count;			
+	}
 }
 
 function uniformSetters(gl, program){ 
