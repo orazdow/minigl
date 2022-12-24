@@ -1,8 +1,4 @@
-import {createShaderProgram, 
-		createBuffers, 
-		enableAttributes, 
-		setUniforms, 
-		drawObj} from './minigl.js';
+import {createShaderProgram, createBuffers, enableAttributes, setUniforms, drawObj} from './minigl.js';
 
 const def_vs =/*glsl*/`#version 300 es
 
@@ -68,8 +64,8 @@ class Glview{
         this.render = this.render.bind(this);
         this.req = null;
         this.loop = false;
-        this.rect = canvas.getBoundingClientRect();
         this.mouse = [0,0];
+        this.rect = canvas.getBoundingClientRect();
         canvas.onmousemove = (e)=>{
         	this.mouse[0] = (e.clientX-this.rect.x)/this.res[0];
         	this.mouse[1] = (e.clientY-this.rect.y)/this.res[1];
@@ -78,10 +74,11 @@ class Glview{
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
         this.gl.viewport(0, 0, this.res[0], this.res[1]);
-        this.init(this.gl, this.pgms);
+        if(!this.init(this.gl, this.pgms)) this.exit = true;
     }
 
     start(){
+        if(this.exit) return;
         this.gl.viewport(0, 0, this.res[0], this.res[1]);
         this.gl.clearColor(...this.prog.clearcolor);
         this.loop = true;
@@ -99,14 +96,16 @@ class Glview{
 
     render(time){
 		this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-        setMainUniforms(this.prog, time*.01, this.res, this.mouse);
+        this.prog.uniforms.time = time*.01;
+        this.prog.uniforms.mouse = this.mouse;
 		enableAttributes(this.gl, this.prog);
-		setUniforms(this.gl, this.prog)
+		setUniforms(this.gl, this.prog);
 		drawObj(this.gl, this.prog);
-		for(let p of this.prog.chain){
-            setMainUniforms(p, time*.01, this.res, this.mouse);
+		for(let p of this.prog.chain) if(p.on){
+            p.uniforms.time = time*.01;
+            p.uniforms.mouse = this.mouse;
 			enableAttributes(this.gl, p);
-			setUniforms(this.gl, p)
+			setUniforms(this.gl, p);
 			drawObj(this.gl, p);			
 		}
         if(this.loop) this.req = requestAnimationFrame(this.render);	
@@ -115,14 +114,16 @@ class Glview{
     init(gl, pgms){
     	for(let pgm of pgms){
     		merge(pgm, def_prog);
-    		createShaderProgram(gl, pgm);
+            pgm.uniforms.resolution = this.res;
+    		if(!createShaderProgram(gl, pgm)) return null; 
     		createBuffers(gl, pgm);
     		for(let p of pgm.chain||[]){
     			merge(p, {...def_prog, count: pgm.count});
-	    		createShaderProgram(gl, p);
+                p.uniforms.resolution = this.res;
+	    		if(!createShaderProgram(gl, p)) return null;
     			createBuffers(gl, p);
     		}
-    	}
+    	} return 1;
     }
 }
 
@@ -131,12 +132,6 @@ function initCanvas(canvas, res){
     canvas.height = res[1];
     canvas.style.width = res[0]+'px';
     canvas.style.height = res[1]+'px';    
-}
-
-function setMainUniforms(obj, time, res, mouse){
-    obj.uniforms.time = time;
-    obj.uniforms.resolution = res;
-    obj.uniforms.mouse = mouse;
 }
 
 function merge(dest, template){

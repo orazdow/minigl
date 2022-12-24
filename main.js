@@ -17,6 +17,24 @@ const _fs = /*glsl*/`#version 300 es
     }
 `;
 
+const _fs_ = /*glsl*/`#version 300 es
+    precision mediump float;
+    out vec4 fragColor;
+
+    uniform float time;
+    uniform vec2 resolution;
+    uniform vec2 mouse;
+
+    #define glf gl_FragCoord
+
+    void main() {
+    	vec2 uv = (2.*glf.xy-resolution.xy)/resolution.y;
+    	float f = dot((1.+mouse.y*18.)*uv,uv);
+    	vec3 col = vec3(.1/f);
+        fragColor = vec4(col, 1.);
+    }
+`;
+
 const prog = {
 	arrays: {
 		position: {
@@ -63,6 +81,12 @@ const prog3 = {
 }
 
 prog.chain = [prog2, prog3]
+
+const progg = {
+	fs: _fs_,
+	clearcolor: [.1,.2,.3,1],
+	uniforms: {}
+}
 
 const glview = new Glview(document.querySelector('canvas'), prog, [500,500]);
 glview.start()

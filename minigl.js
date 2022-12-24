@@ -6,13 +6,15 @@ function createShaderProgram(gl, obj){
 	gl.shaderSource(fs, obj.fs);
 	gl.compileShader(fs);
 	gl.compileShader(vs);
-	[vs, fs].forEach((shader, i)=>{
+	let compiled = [vs, fs].every((shader, i)=>{
 		if(!gl.getShaderParameter(shader, gl.COMPILE_STATUS)){
 			console.log('error compiling', i? 'fragment':'vertex', 'shader:');
 			console.log(gl.getShaderInfoLog(shader));
-			gl.deleteShader(shader); return null;
-		}
+			gl.deleteShader(shader);
+			return false; 
+		}	return true;
 	});
+	if(!compiled) return null;
 	let pgm = gl.createProgram();
 	gl.attachShader(pgm, vs);
 	gl.attachShader(pgm, fs);
@@ -21,6 +23,7 @@ function createShaderProgram(gl, obj){
 	for(let key in obj.arrays)
 		obj.arrays[key].location = gl.getAttribLocation(pgm, key); 
 	obj.uniformSetters = uniformSetters(gl, pgm);
+	return 1;
 }
 
 function createBuffers(gl, obj){
@@ -36,7 +39,7 @@ function createBuffers(gl, obj){
 		}else{
 			attr.buffer = gl.createBuffer(); 
 			let count = attr.data.length/attr.components;
-			if(count-Math.floor(count)) console.log(key+': non-integer component count');
+			if(count-Math.floor(count)) console.log(key+': non-integer element count');
 			if(key=='position'){
 				obj.vao = gl.createVertexArray(); 
 				gl.bindVertexArray(obj.vao); 
