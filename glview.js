@@ -1,7 +1,6 @@
 import {createShaderProgram, createBuffers, enableAttributes, setUniforms, drawObj} from './minigl.js';
 
 const def_vs =/*glsl*/`#version 300 es
-
 	in vec3 position;
 	in vec3 color;
 	out vec3 vcolor;
@@ -19,12 +18,11 @@ const def_fs = /*glsl*/`#version 300 es
     uniform vec2 resolution;
     uniform vec2 mouse;
     uniform float time;
-    uniform float a;
-    #define g gl_FragCoord
+    #define glf gl_FragCoord
 
     void main() {
-    	vec3 col = vcolor + .5*a*(cos(time+(g.x+g.y)/20.)*.2+.2);
-        fragColor = vec4(col, 1.);
+    	// vec3 col = vcolor + .5*(cos(time+(glf.x+glf.y)/20.)*.2+.2);
+        fragColor = vec4(vcolor, 1.);
     }
 `;
 
@@ -33,7 +31,11 @@ const def_prog = {
 		position: {
 			components: 3,
 			data: [-1,-1,0, 1,-1,0,  -1,1,0,  1,1,0]
-		}
+		},
+        color: {
+            components: 3,
+            data: [1,0,0, 0,0,1, 0,0,1, 0,1,0]
+        }
 	},
     clearcolor: [0,0,0,0],
 	uniforms: {
@@ -54,7 +56,7 @@ const def_prog = {
 
 class Glview{
 
-    constructor(canvas, pgms, res, gui){
+    constructor(canvas, pgms, res, limitfps){
     	this.pgms = (pgms instanceof Array)? pgms : [pgms];
         this.prog = this.pgms[0];
         this.gl = canvas.getContext("webgl2", {premultipliedAlpha: false, antialias: true});
@@ -62,13 +64,15 @@ class Glview{
         this.res = res || [500, 500];
         initCanvas(canvas, this.res);
         this.render = this.render.bind(this);
+        this.fps = this.fps.bind(this);
         this.req = null;
         this.loop = false;
+        this.limit = limitfps;
         this.mouse = [0,0];
-        this.rect = canvas.getBoundingClientRect();
+        window.glview = this;
         canvas.onmousemove = (e)=>{
-        	this.mouse[0] = (e.clientX-this.rect.x)/this.res[0];
-        	this.mouse[1] = (e.clientY-this.rect.y)/this.res[1];
+        	this.mouse[0] = e.offsetX/this.res[0];
+        	this.mouse[1] = 1.-e.offsetY/this.res[1];
         }
         this.gl.disable(this.gl.DEPTH_TEST);
         this.gl.enable(this.gl.BLEND);
@@ -82,7 +86,11 @@ class Glview{
         this.gl.viewport(0, 0, this.res[0], this.res[1]);
         this.gl.clearColor(...this.prog.clearcolor);
         this.loop = true;
-    	this.req = requestAnimationFrame(this.render);
+        const f = (time)=>{
+            this.render(time); 
+            this.req = requestAnimationFrame(f);
+        }; 
+        if(this.limit) this.fps(30); else f(0);
     }
 
     stop(){
@@ -90,25 +98,35 @@ class Glview{
         cancelAnimationFrame(this.req);
     }
 
-    frame(){
-        if(!this.loop) this.render(0);
+    frame(time=0){
+        if(!this.loop) this.render(time);
     }
 
     render(time){
-		this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
         this.prog.uniforms.time = time*.01;
         this.prog.uniforms.mouse = this.mouse;
-		enableAttributes(this.gl, this.prog);
-		setUniforms(this.gl, this.prog);
-		drawObj(this.gl, this.prog);
-		for(let p of this.prog.chain) if(p.on){
+        enableAttributes(this.gl, this.prog);
+        setUniforms(this.gl, this.prog);
+        drawObj(this.gl, this.prog);
+        for(let p of this.prog.chain) if(p.on){
             p.uniforms.time = time*.01;
             p.uniforms.mouse = this.mouse;
-			enableAttributes(this.gl, p);
-			setUniforms(this.gl, p);
-			drawObj(this.gl, p);			
-		}
-        if(this.loop) this.req = requestAnimationFrame(this.render);	
+            enableAttributes(this.gl, p);
+            setUniforms(this.gl, p);
+            drawObj(this.gl, p);            
+        }
+    }
+
+    fps(ms){
+        let last = performance.now();
+        const _loop = (time)=>{
+            this.req = requestAnimationFrame(_loop);
+            if(time-last > ms){ 
+                last = time;
+                this.render(time);
+            }
+        }; _loop(0);
     }
 
     init(gl, pgms){

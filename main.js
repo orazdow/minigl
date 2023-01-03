@@ -11,16 +11,17 @@ const _fs = /*glsl*/`#version 300 es
     #define g gl_FragCoord
 
     void main() {
-    	vec3 col = cos(vec3(.5,1.,1.5))*.5+.5;
-    	float c = a*(cos((mouse.x*g.x+mouse.y*g.y)/20.)*.2+.2);
-        fragColor = vec4(col, 1.-c);
+        vec2 uv = (2.*gl_FragCoord.xy-resolution)/resolution.y;
+        float f = sin(8.*dot(uv,uv)+time)*.5+.5;
+    	vec3 col = vcolor + .5*a*(cos(time+(g.x+g.y)/20.)*.2+.2)*f;
+        fragColor = vec4(col*col, 1.);
     }
 `;
 
 const _fs_ = /*glsl*/`#version 300 es
     precision mediump float;
     out vec4 fragColor;
-
+    in vec3 vcolor;
     uniform float time;
     uniform vec2 resolution;
     uniform vec2 mouse;
@@ -29,9 +30,28 @@ const _fs_ = /*glsl*/`#version 300 es
 
     void main() {
     	vec2 uv = (2.*glf.xy-resolution.xy)/resolution.y;
-    	float f = dot((1.+mouse.y*18.)*uv,uv);
-    	vec3 col = vec3(.1/f);
-        fragColor = vec4(col, 1.);
+    	vec2 v = vec2(sin(time*.4), cos(time*.27))*.3; 
+    	float f = dot((1.+mouse.y*18.)*uv-v,uv-v);
+    	vec3 col = vec3(.01/(f*f));
+        fragColor = vec4(vcolor*col, 1.);
+    }
+`;
+
+const _vs =/*glsl*/`#version 300 es
+
+	precision mediump float;
+	in vec3 position;
+	in vec3 color;
+	out vec3 vcolor;
+	uniform float time;
+	uniform vec2 mouse;
+
+    void main() {
+    	vcolor = color;
+    	float t = time*.1;
+    	mat2 m = mat2(cos(t), -sin(t), sin(t), cos(t));
+    	vec2 mm = mouse*2.-1.;
+        gl_Position = vec4((sin(time*.2)*.2+1.2)*1.3*position.xy*m,0., 1.);
     }
 `;
 
@@ -77,16 +97,18 @@ const prog3 = {
 			data: [.4,0,.8, .1,0,.8, .4,.5,.7]
 		}
 	},
+	vs: _vs,
+	fs: _fs_,
 	uniforms: {a: 1}
 }
+
 
 prog.chain = [prog2, prog3]
 
 const progg = {
-	fs: _fs_,
-	clearcolor: [.1,.2,.3,1],
-	uniforms: {}
+	// fs: _fs_,
+	// uniforms: {}
 }
 
-const glview = new Glview(document.querySelector('canvas'), prog, [500,500]);
+const glview = new Glview(document.querySelector('canvas'), prog, [500,500], 1);
 glview.start()
