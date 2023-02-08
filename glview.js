@@ -56,7 +56,7 @@ const def_prog = {
 
 class Glview{
 
-    constructor(canvas, pgms, res, limitfps, gui){
+    constructor(canvas, pgms, res, limitfps, gui, guiobj){
     	this.pgms = (pgms instanceof Array)? pgms : [pgms];
         this.prog = this.pgms[0];
         this.gl = canvas.getContext("webgl2", {premultipliedAlpha: false, antialias: true});
@@ -79,7 +79,7 @@ class Glview{
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
         this.gl.viewport(0, 0, this.res[0], this.res[1]);
         if(!this.init(this.gl, this.pgms)) this.exit = true;
-        if(gui) initGui(gui, this);
+        if(gui) initGui(gui, this, guiobj);
     }
 
     start(){
@@ -167,14 +167,15 @@ function merge(dest, template){
     	if(dest[prop] == null) dest[prop] = template[prop];
 }
 
-function initGui(gui, ctl){
+function initGui(gui, ctl, mainobj){
     gui.__closeButton.style.visibility = "hidden";
     if(ctl.pgms.length > 1)
         gui.add({pgm: 0}, 'pgm', 0, ctl.pgms.length-1, 1).onChange((val)=>{
             ctl.switchProgram(val);   
         });
+    if(mainobj){ addGuiObj(gui, mainobj, ctl); mainobj.ctl = ctl;}
     for(let p of ctl.pgms){
-        if(p.gui) initSubGui(gui, p, ctl, p===ctl.prog);
+        if(p.gui) initSubGui(gui, p, ctl, p!==ctl.prog);
         for(let _p of p.chain || [])
             if(_p.gui) initSubGui(gui, _p, ctl);
     }

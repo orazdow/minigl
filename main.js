@@ -6,6 +6,17 @@ const canvas = document.querySelector('canvas');
 const pgms = [prog, {}];
 const gui = new dat.GUI();
 
-const glview = new Glview(canvas, pgms, [500,500], 1, gui);
+let animate = false;
+const maingui = {
+	fields: [{
+		animate: animate,
+		onChange: (v)=>{
+			if(v) maingui.ctl.start();
+			else maingui.ctl.stop();
+		}
+	}]
+}
+
+const glview = new Glview(canvas, pgms, [500,500], 1, gui, maingui);
 // glview.start()
 glview.frame()

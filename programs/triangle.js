@@ -81,7 +81,7 @@ const testprog = {
 const gui = {
     name: 'tri',
     open: false,
-    switch: true,
+    switch: false,
     updateFame: true,
     fields:[
         {
@@ -90,13 +90,6 @@ const gui = {
             max: 10.0,
             step: 0.01,
             onChange : (v)=>{prog.uniforms.a = v;}
-        },
-        {
-            b: 4,
-            min: 0.0,
-            max: 10.0,
-            step: 0.01,
-            onChange : (v)=>{prog2.uniforms.a = v;}
         }
     ]
 }
