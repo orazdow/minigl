@@ -34,7 +34,7 @@ const def_prog = {
 		},
         color: {
             components: 3,
-            data: [1,0,0, 0,0,1, 0,0,1, 0,1,0]
+            data: [0,1,0, 0,0,1, 0,0,1, 1,0,0]
         }
 	},
     clearcolor: [0,0,0,0],
@@ -56,7 +56,7 @@ const def_prog = {
 
 class Glview{
 
-    constructor(canvas, pgms, res, limitfps){
+    constructor(canvas, pgms, res, limitfps, gui){
     	this.pgms = (pgms instanceof Array)? pgms : [pgms];
         this.prog = this.pgms[0];
         this.gl = canvas.getContext("webgl2", {premultipliedAlpha: false, antialias: true});
@@ -79,6 +79,7 @@ class Glview{
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
         this.gl.viewport(0, 0, this.res[0], this.res[1]);
         if(!this.init(this.gl, this.pgms)) this.exit = true;
+        if(gui) initGui(gui, this);
     }
 
     start(){
@@ -96,6 +97,15 @@ class Glview{
     stop(){
         this.loop = false;
         cancelAnimationFrame(this.req);
+    }
+
+    switchProgram(idx){      
+        if(this.pgms[idx]){
+            if(this.prog.gui) this.prog._gui.hide();
+            this.prog = this.pgms[idx];
+            this.frame();
+            if(this.prog.gui) this.prog._gui.show();
+        }
     }
 
     frame(time=0){
@@ -155,6 +165,53 @@ function initCanvas(canvas, res){
 function merge(dest, template){
     for(let prop in template) 
     	if(dest[prop] == null) dest[prop] = template[prop];
+}
+
+function initGui(gui, ctl){
+    gui.__closeButton.style.visibility = "hidden";
+    if(ctl.pgms.length > 1)
+        gui.add({pgm: 0}, 'pgm', 0, ctl.pgms.length-1, 1).onChange((val)=>{
+            ctl.switchProgram(val);   
+        });
+    for(let p of ctl.pgms){
+        if(p.gui) initSubGui(gui, p, ctl, p===ctl.prog);
+        for(let _p of p.chain || [])
+            if(_p.gui) initSubGui(gui, _p, ctl);
+    }
+}
+
+function initSubGui(gui, p, ctl, hide){
+    p._gui = gui.addFolder(p.gui.name);
+    p.ctl = ctl;
+    if(hide) p._gui.hide();
+    if(p.gui.open && p.on) p._gui.open();         
+    addGuiObj(p._gui, p.gui, ctl); 
+    p._gui.title = p._gui.__ul.firstChild;
+    p._gui.title.style.color = p.on ? "springgreen" : "white";
+    if(p.gui.switch){
+       let _p = p._gui.add({'' : p.on}, '', p.on);
+           _p.onChange((val)=>{
+            p.on = val;
+            p._gui.title.style.color = p.on ? "springgreen" : "white";
+            ctl.frame();
+        });
+    }
+}
+
+function addGuiObj(guiTarget, guiObj, ctl){
+    let i = 0;
+    for(let o of guiObj.fields||[]){
+        let f;
+        if(f = o.onChange){ delete o.onChange; }
+        let params = [o, Object.keys(o)[0], ...Object.values(o).slice(1)];
+        let g = guiTarget.add(...params);
+        if(f){
+            if(guiObj.updateFame)
+                g.onChange((v)=>{f(v); ctl.frame();}); 
+            else g.onChange(f);
+        }
+        guiObj.fields[i++].ref = g;
+    }       
 }
 
 export default Glview;
