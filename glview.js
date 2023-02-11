@@ -113,7 +113,7 @@ class Glview{
 
     render(time){
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-        this.prog.uniforms.time = time*.01;
+        this.prog.uniforms.time = time*.001;
         this.prog.uniforms.mouse = this.mouse;
         enableAttributes(this.gl, this.prog);
         this.prog.rendercb(this.prog);
