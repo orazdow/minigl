@@ -1,12 +1,12 @@
 import {createShaderProgram, createBuffers, enableAttributes, setUniforms, drawObj} from './minigl.js';
 
 const def_vs =/*glsl*/`#version 300 es
-	in vec3 position;
-	in vec3 color;
-	out vec3 vcolor;
+    in vec3 position;
+    in vec3 color;
+    out vec3 vcolor;
     
     void main() {
-    	vcolor = color;
+        vcolor = color;
         gl_Position = vec4(position, 1.);
     }
 `;
@@ -21,43 +21,43 @@ const def_fs = /*glsl*/`#version 300 es
     #define glf gl_FragCoord
 
     void main() {
-    	// vec3 col = vcolor + .5*(cos(time+(glf.x+glf.y)/20.)*.2+.2);
+        // vec3 col = vcolor + .5*(cos(time+(glf.x+glf.y)/20.)*.2+.2);
         fragColor = vec4(vcolor, 1.);
     }
 `;
 
 const def_prog = {
-	arrays: {
-		position: {
-			components: 3,
-			data: [-1,-1,0, 1,-1,0,  -1,1,0,  1,1,0]
-		},
+    arrays: {
+        position: {
+            components: 3,
+            data: [-1,-1,0, 1,-1,0,  -1,1,0,  1,1,0]
+        },
         color: {
             components: 3,
             data: [0,1,0, 0,0,1, 0,0,1, 1,0,0]
         }
-	},
+    },
     clearcolor: [0,0,0,0],
-	uniforms: {
+    uniforms: {
         resolution: [500,500],
         mouse: [0,0],
         time: 0
     },
-	vs: def_vs,
-	fs: def_fs,
-	drawMode: 'TRIANGLE_STRIP',
+    vs: def_vs,
+    fs: def_fs,
+    drawMode: 'TRIANGLE_STRIP',
     textures : null,
     rendercb : ()=>{},
     setupcb : ()=>{},
     chain : [],
-	shaderProgram: null,
-	on: true
+    shaderProgram: null,
+    on: true
 }
 
 class Glview{
 
     constructor(canvas, pgms, res, limitfps, gui, guiobj){
-    	this.pgms = (pgms instanceof Array)? pgms : [pgms];
+        this.pgms = (pgms instanceof Array)? pgms : [pgms];
         this.prog = this.pgms[0];
         this.gl = canvas.getContext("webgl2", {premultipliedAlpha: false, antialias: true});
         if(!this.gl){console.log('no gl context'); return;}
@@ -71,19 +71,18 @@ class Glview{
         this.mouse = [0,0];
         window.glview = this;
         canvas.onmousemove = (e)=>{
-        	this.mouse[0] = e.offsetX/this.res[0];
-        	this.mouse[1] = 1.-e.offsetY/this.res[1];
+            this.mouse[0] = e.offsetX/this.res[0];
+            this.mouse[1] = 1.-e.offsetY/this.res[1];
         }
         this.gl.disable(this.gl.DEPTH_TEST);
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
         this.gl.viewport(0, 0, this.res[0], this.res[1]);
-        if(!this.init(this.gl, this.pgms)) this.exit = true;
+        if(!this.init(this.gl, this.pgms)) this.start = this.frame = ()=>{};
         if(gui) initGui(gui, this, guiobj);
     }
 
     start(){
-        if(this.exit) return;
         this.gl.viewport(0, 0, this.res[0], this.res[1]);
         this.gl.clearColor(...this.prog.clearcolor);
         this.loop = true;
@@ -117,12 +116,14 @@ class Glview{
         this.prog.uniforms.time = time*.01;
         this.prog.uniforms.mouse = this.mouse;
         enableAttributes(this.gl, this.prog);
+        this.prog.rendercb(this.prog);
         setUniforms(this.gl, this.prog);
         drawObj(this.gl, this.prog);
         for(let p of this.prog.chain) if(p.on){
             p.uniforms.time = time*.01;
             p.uniforms.mouse = this.mouse;
             enableAttributes(this.gl, p);
+            p.rendercb(p);
             setUniforms(this.gl, p);
             drawObj(this.gl, p);            
         }
@@ -140,18 +141,20 @@ class Glview{
     }
 
     init(gl, pgms){
-    	for(let pgm of pgms){
-    		merge(pgm, def_prog);
+        for(let pgm of pgms){
+            merge(pgm, def_prog);
             pgm.uniforms.resolution = this.res;
-    		if(!createShaderProgram(gl, pgm)) return null; 
-    		createBuffers(gl, pgm);
-    		for(let p of pgm.chain||[]){
-    			merge(p, {...def_prog, count: pgm.count});
+            if(!createShaderProgram(gl, pgm)) return null; 
+            pgm.setupcb(pgm);
+            createBuffers(gl, pgm);
+            for(let p of pgm.chain||[]){
+                merge(p, {...def_prog, count: pgm.count});
                 p.uniforms.resolution = this.res;
-	    		if(!createShaderProgram(gl, p)) return null;
-    			createBuffers(gl, p);
-    		}
-    	} return 1;
+                if(!createShaderProgram(gl, p)) return null;
+                p.setupcb(p);
+                createBuffers(gl, p);
+            }
+        } return 1;
     }
 }
 
@@ -164,7 +167,7 @@ function initCanvas(canvas, res){
 
 function merge(dest, template){
     for(let prop in template) 
-    	if(dest[prop] == null) dest[prop] = template[prop];
+        if(dest[prop] == null) dest[prop] = template[prop];
 }
 
 function initGui(gui, ctl, mainobj){
