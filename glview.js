@@ -78,12 +78,11 @@ class Glview{
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
         this.gl.viewport(0, 0, this.res[0], this.res[1]);
-        if(!this.init(this.gl, this.pgms)) this.exit = true;
+        if(!this.init(this.gl, this.pgms)) this.start = this.frame = ()=>{};
         if(gui) initGui(gui, this, guiobj);
     }
 
     start(){
-        if(this.exit) return;
         this.gl.viewport(0, 0, this.res[0], this.res[1]);
         this.gl.clearColor(...this.prog.clearcolor);
         this.loop = true;
@@ -117,12 +116,14 @@ class Glview{
         this.prog.uniforms.time = time*.01;
         this.prog.uniforms.mouse = this.mouse;
         enableAttributes(this.gl, this.prog);
+        this.prog.rendercb(this.prog);
         setUniforms(this.gl, this.prog);
         drawObj(this.gl, this.prog);
         for(let p of this.prog.chain) if(p.on){
             p.uniforms.time = time*.01;
             p.uniforms.mouse = this.mouse;
             enableAttributes(this.gl, p);
+            p.rendercb(p);
             setUniforms(this.gl, p);
             drawObj(this.gl, p);            
         }
@@ -144,11 +145,13 @@ class Glview{
     		merge(pgm, def_prog);
             pgm.uniforms.resolution = this.res;
     		if(!createShaderProgram(gl, pgm)) return null; 
+            pgm.setupcb(pgm);
     		createBuffers(gl, pgm);
     		for(let p of pgm.chain||[]){
     			merge(p, {...def_prog, count: pgm.count});
                 p.uniforms.resolution = this.res;
 	    		if(!createShaderProgram(gl, p)) return null;
+                p.setupcb(p);
     			createBuffers(gl, p);
     		}
     	} return 1;

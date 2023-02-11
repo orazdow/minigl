@@ -101,7 +101,8 @@ function uniformSetters(gl, program){
 	for(let i = 0; i < count; i++){
 		let info = gl.getActiveUniform(program, i);
 		let loc = gl.getUniformLocation(program, info.name);
-		setters[info.name] = utypes(gl, info.type, info.size, loc);
+		let name = info.name.replace('[0]', '');
+		setters[name] = utypes(gl, info.type, info.size, loc);
 	}
 	return setters;
 }

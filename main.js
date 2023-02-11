@@ -1,6 +1,7 @@
 import Glview from './glview.js';
 import * as dat from "./lib/dat.gui.module.min.js";
-import prog from './programs/triangle.js';
+// import prog from './programs/triangle.js';
+import prog from './programs/brownian.js';
 
 const canvas = document.querySelector('canvas');
 const pgms = [prog, {}];
@@ -17,6 +18,6 @@ const maingui = {
 	}]
 }
 
-const glview = new Glview(canvas, pgms, [500,500], 1, gui, maingui);
+const glview = new Glview(canvas, prog, [500,500], 1, gui, maingui);
 // glview.start()
 glview.frame()
