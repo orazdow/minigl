@@ -19,6 +19,6 @@ const maingui = {
 	}]
 }
 
-const glview = new Glview(canvas, [waves, lines], [500,500], 1, gui, maingui);
+const glview = new Glview(canvas, [lines, waves], [500,500], 1, gui, maingui);
 // glview.start()
 glview.frame()

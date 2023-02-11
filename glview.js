@@ -210,7 +210,7 @@ function addGuiObj(guiTarget, guiObj, ctl){
         let params = [o, Object.keys(o)[0], ...Object.values(o).slice(1)];
         let g = guiTarget.add(...params);
         if(f){
-            if(guiObj.updateFame)
+            if(guiObj.updateFrame)
                 g.onChange((v)=>{f(v); ctl.frame();}); 
             else g.onChange(f);
         }

@@ -1,3 +1,4 @@
+const {cos, sin} = Math;
 const fs = /*glsl*/`#version 300 es
     precision mediump float;
     in vec3 vcolor;
@@ -6,7 +7,7 @@ const fs = /*glsl*/`#version 300 es
     uniform vec2 mouse;
     uniform float time;
     uniform vec2 points[32];
-    #define num 4
+    #define num 16
     #define glf gl_FragCoord
     #define res resolution
     #define WEIGHT (3./res.x)
@@ -31,12 +32,42 @@ const fs = /*glsl*/`#version 300 es
     }
 `;
 
-const points = new Array(8);
+const points = new Array(64);
 
 function setupcb(pgm){
-    for(let i = 0; i < prog.uniforms.points.length; i++){
-        prog.uniforms.points[i] = Math.random()*2.-1;
+    for(let i = 0; i < prog.uniforms.points.length/2; i+=2){
+        let t = (i/prog.uniforms.points.length)*6.28;
+        prog.uniforms.points[i] = cos(t*prog.uniforms.a);
+        prog.uniforms.points[i+1] = sin(prog.uniforms.b*t*prog.uniforms.a);
     }
+}
+
+const gui = {
+    name:'lj',
+    open: true,
+    updateFrame: true,
+    fields: [
+    {
+        a: 1,
+        min: .1,
+        max: 8,
+        step: .1,
+        onChange: (v)=>{
+            prog.uniforms.a = v;
+            setupcb(prog)
+        }
+    },
+    {
+        b: 1,
+        min: .1,
+        max: 8,
+        step: .1,
+        onChange: (v)=>{
+            prog.uniforms.b = v;
+            setupcb(prog)
+        }
+    }
+    ]
 }
 
 const prog = {
@@ -45,9 +76,11 @@ const prog = {
     setupcb : setupcb,
     // rendercb : rendercb,
     uniforms : {
-        points: points
+        points: points,
+        a: 1,
+        b: 1
     },
-    // gui : gui,
+    gui : gui,
     // on: false,
 };
 
