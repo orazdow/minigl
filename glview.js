@@ -1,5 +1,5 @@
-import {createShaderProgram, createBuffers, enableAttributes, setUniforms, drawObj} from './minigl.js';
-const tau = 6.28318530718;
+import * as mgl from './minigl.js';
+/* {createShaderProgram, createBuffers, enableAttributes, setUniforms, drawObj} */
 const def_vs =/*glsl*/`#version 300 es
 	in vec3 position;
 	in vec3 color;
@@ -59,16 +59,15 @@ class Glview{
     constructor(canvas, pgms, res, limitfps, gui, guiobj){
     	this.pgms = (pgms instanceof Array)? pgms : [pgms];
         this.prog = this.pgms[0];
-        this.gl = canvas.getContext("webgl2", {premultipliedAlpha: true, antialias: true});
+        this.gl = canvas.getContext("webgl2", {premultipliedAlpha: true, antialias: false});
         if(!this.gl){console.log('no gl context'); return;}
         this.res = res || [500, 500];
         initCanvas(canvas, this.res);
         this.render = this.render.bind(this);
         this.fps = this.fps.bind(this);
-        this.draw = this.draw.bind(this);
-        this.draw2 = this.draw2.bind(this);
         this.req = null;
         this.loop = false;
+        this.mgl = mgl;
         this.limit = limitfps;
         this.mouse = [0,0];
         canvas.onmousemove = (e)=>{
@@ -116,35 +115,17 @@ class Glview{
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
         this.prog.uniforms.time = time*.001;
         this.prog.uniforms.mouse = this.mouse;
-        enableAttributes(this.gl, this.prog);
+        mgl.enableAttributes(this.gl, this.prog);
         this.prog.rendercb(this.prog);
-        setUniforms(this.gl, this.prog);
-        this.prog.draw(this.prog)
-        // drawObj(this.gl, this.prog);
+        mgl.setUniforms(this.gl, this.prog);
+        this.prog.draw(this.prog);
         for(let p of this.prog.chain) if(p.on){
             p.uniforms.time = time*.01;
             p.uniforms.mouse = this.mouse;
-            enableAttributes(this.gl, p);
+            mgl.enableAttributes(this.gl, p);
             p.rendercb(p);
-            setUniforms(this.gl, p);
-            drawObj(this.gl, p);            
-        }
-    }
-
-    draw(prog){
-        drawObj(this.gl, prog);
-    }
-
-    draw2(prog){
-        let d = tau/4;
-        for(let t = 0; t < tau; t+= d){
-            prog.uniforms.vrot = t;
-            prog.uniforms.dir = [1,1];
-            setUniforms(this.gl, prog);
-            drawObj(this.gl, prog);
-            prog.uniforms.dir = [-1,1];
-            setUniforms(this.gl, prog);
-            drawObj(this.gl, prog);
+            mgl.setUniforms(this.gl, p);
+            mgl.drawObj(this.gl, p);            
         }
     }
 
@@ -161,19 +142,18 @@ class Glview{
 
     init(gl, pgms){
     	for(let pgm of pgms){
-    		merge(pgm, def_prog);
+    		merge(pgm, def_prog, this);
             pgm.uniforms.resolution = this.res;
-            pgm.ctl = this;
-    		if(!createShaderProgram(gl, pgm)) return null; 
+    		if(!mgl.createShaderProgram(gl, pgm)) return null; 
             pgm.setupcb(pgm);
-            if(!pgm.draw) pgm.draw = this.draw;
-    		createBuffers(gl, pgm);
+            if(!pgm.draw) pgm.draw = ()=>{mgl.drawObj(this.gl, pgm)};
+    		mgl.createBuffers(gl, pgm);
     		for(let p of pgm.chain||[]){
     			merge(p, {...def_prog, count: pgm.count});
                 p.uniforms.resolution = this.res;
-	    		if(!createShaderProgram(gl, p)) return null;
+	    		if(!mgl.createShaderProgram(gl, p)) return null;
                 p.setupcb(p);
-    			createBuffers(gl, p);
+    			mgl.createBuffers(gl, p);
     		}
     	} return 1;
     }
@@ -186,9 +166,10 @@ function initCanvas(canvas, res){
     canvas.style.height = res[1]+'px';    
 }
 
-function merge(dest, template){
+function merge(dest, template, ctl){
     for(let prop in template) 
     	if(dest[prop] == null) dest[prop] = template[prop];
+    dest.ctl = ctl;
 }
 
 function initGui(gui, ctl, mainobj){

@@ -42,15 +42,36 @@ var rot_n = 4;
 var theta = 0;
 var recenter = false;
 var seed = 404; 
+const tau = 6.28318530718;
 
 function setupcb(pgm){
 	model = buildModel(1, 0, 0, 0);
+	
 	// pgm.max_count = model.i.length*4;
-	// let quads = getQuads(model, .0033);
-	// prog.arrays.position.data = quads;
+	// prog.arrays.position.data = getQuads(model, .0033);
+
 	pgm.max_count = model.i.length*2;
 	prog.arrays.position.data = getLines(model);
-	pgm.draw = pgm.ctl.draw2;
+	prog.drawMode = 'LINES';
+
+	pgm.draw = drawcb;
+}
+
+function rendercb(pgm){}
+
+function drawcb(pgm){
+	let gl = pgm.ctl.gl;
+	let mgl = pgm.ctl.mgl;
+    let d = tau/4;
+    for(let t = 0; t < tau; t+= d){
+        pgm.uniforms.vrot = t;
+        pgm.uniforms.dir = [1,1];
+        mgl.setUniforms(gl, pgm);
+        mgl.drawObj(gl, pgm);
+        pgm.uniforms.dir = [-1,1];
+        mgl.setUniforms(gl, pgm);
+        mgl.drawObj(gl, pgm);
+    }
 }
 
 function buildModel(rule){
@@ -139,7 +160,6 @@ const gui = {
 
 const prog = {
 	setupcb: setupcb,
-	drawMode: 'LINES',
 	arrays: {
 		position: {
 			components: 3,
