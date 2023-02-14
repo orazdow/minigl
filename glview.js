@@ -1,5 +1,5 @@
 import {createShaderProgram, createBuffers, enableAttributes, setUniforms, drawObj} from './minigl.js';
-
+const tau = 6.28318530718;
 const def_vs =/*glsl*/`#version 300 es
 	in vec3 position;
 	in vec3 color;
@@ -65,11 +65,12 @@ class Glview{
         initCanvas(canvas, this.res);
         this.render = this.render.bind(this);
         this.fps = this.fps.bind(this);
+        this.draw = this.draw.bind(this);
+        this.draw2 = this.draw2.bind(this);
         this.req = null;
         this.loop = false;
         this.limit = limitfps;
         this.mouse = [0,0];
-        window.glview = this;
         canvas.onmousemove = (e)=>{
         	this.mouse[0] = e.offsetX/this.res[0];
         	this.mouse[1] = 1.-e.offsetY/this.res[1];
@@ -118,7 +119,8 @@ class Glview{
         enableAttributes(this.gl, this.prog);
         this.prog.rendercb(this.prog);
         setUniforms(this.gl, this.prog);
-        drawObj(this.gl, this.prog);
+        this.prog.draw(this.prog)
+        // drawObj(this.gl, this.prog);
         for(let p of this.prog.chain) if(p.on){
             p.uniforms.time = time*.01;
             p.uniforms.mouse = this.mouse;
@@ -126,6 +128,23 @@ class Glview{
             p.rendercb(p);
             setUniforms(this.gl, p);
             drawObj(this.gl, p);            
+        }
+    }
+
+    draw(prog){
+        drawObj(this.gl, prog);
+    }
+
+    draw2(prog){
+        let d = tau/4;
+        for(let t = 0; t < tau; t+= d){
+            prog.uniforms.vrot = t;
+            prog.uniforms.dir = [1,1];
+            setUniforms(this.gl, prog);
+            drawObj(this.gl, prog);
+            prog.uniforms.dir = [-1,1];
+            setUniforms(this.gl, prog);
+            drawObj(this.gl, prog);
         }
     }
 
@@ -144,8 +163,10 @@ class Glview{
     	for(let pgm of pgms){
     		merge(pgm, def_prog);
             pgm.uniforms.resolution = this.res;
+            pgm.ctl = this;
     		if(!createShaderProgram(gl, pgm)) return null; 
             pgm.setupcb(pgm);
+            if(!pgm.draw) pgm.draw = this.draw;
     		createBuffers(gl, pgm);
     		for(let p of pgm.chain||[]){
     			merge(p, {...def_prog, count: pgm.count});

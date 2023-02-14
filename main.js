@@ -6,6 +6,9 @@ import lines from './programs/lines.js';
 import waves from './programs/waves.js';
 import blob from './programs/sdfblob.js';
 import sdf from './programs/sdf.js';
+import lsys from './programs/lsys.js';
+import quad from './programs/quadlines.js';
+
 
 const canvas = document.querySelector('canvas');
 const gui = new dat.GUI();
@@ -20,7 +23,7 @@ const maingui = {
 		}
 	}]
 }
-
-const glview = new Glview(canvas, [sdf, blob, lines, waves], [500,500], 1, gui, maingui);
+let demo = [sdf, blob, lines, waves];
+const glview = new Glview(canvas, quad, [500,500], 1, gui, maingui);
 // glview.start()
 glview.frame()
