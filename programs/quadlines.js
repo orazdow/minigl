@@ -39,6 +39,7 @@ var model;
 var lev = 1;
 var n_i = 0; 
 var rot_n = 4;
+var mirror = true;
 var theta = 0;
 var recenter = false;
 var seed = 404; 
@@ -46,7 +47,7 @@ const tau = 6.28318530718;
 
 function setupcb(pgm){
 	model = buildModel(1, 0, 0, 0);
-	
+
 	// pgm.max_count = model.i.length*4;
 	// prog.arrays.position.data = getQuads(model, .0033);
 
@@ -62,15 +63,17 @@ function rendercb(pgm){}
 function drawcb(pgm){
 	let gl = pgm.ctl.gl;
 	let mgl = pgm.ctl.mgl;
-    let d = tau/4;
+    let d = tau/rot_n;
     for(let t = 0; t < tau; t+= d){
         pgm.uniforms.vrot = t;
         pgm.uniforms.dir = [1,1];
         mgl.setUniforms(gl, pgm);
         mgl.drawObj(gl, pgm);
-        pgm.uniforms.dir = [-1,1];
-        mgl.setUniforms(gl, pgm);
-        mgl.drawObj(gl, pgm);
+        if(mirror){
+	        pgm.uniforms.dir = [-1,1];
+	        mgl.setUniforms(gl, pgm);
+	        mgl.drawObj(gl, pgm);
+        }
     }
 }
 
@@ -154,6 +157,21 @@ const gui = {
 			onChange: (v)=>{
 				prog.count = Math.round(v*prog.max_count);
 			}	
+		},
+		{
+			rot: rot_n,
+			min: 1,
+			max: 6,
+			step: 1,
+			onChange: (v)=>{
+				rot_n = v;
+			}
+		},
+		{
+			mirror: mirror,
+			onChange: (v)=>{
+				mirror = v;
+			}
 		}
 	]
 }

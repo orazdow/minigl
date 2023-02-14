@@ -59,7 +59,7 @@ class Glview{
     constructor(canvas, pgms, res, limitfps, gui, guiobj){
     	this.pgms = (pgms instanceof Array)? pgms : [pgms];
         this.prog = this.pgms[0];
-        this.gl = canvas.getContext("webgl2", {premultipliedAlpha: true, antialias: false});
+        this.gl = canvas.getContext("webgl2", {premultipliedAlpha: true, antialias: true});
         if(!this.gl){console.log('no gl context'); return;}
         this.res = res || [500, 500];
         initCanvas(canvas, this.res);
