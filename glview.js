@@ -113,6 +113,7 @@ class Glview{
     }
 
     render(time){
+                    this.gl.clearColor(...this.prog.clearcolor);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
         this.prog.uniforms.time = time*.001;
         this.prog.uniforms.mouse = this.mouse;

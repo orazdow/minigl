@@ -4,11 +4,12 @@ import rules from './selectrules.js';
 const vs =/*glsl*/`#version 300 es
 	in vec3 position;
 	uniform float vrot;
+	uniform float amp;
 	uniform vec2 dir;
     
     void main() {
     	mat2 rot = mat2(cos(vrot), -sin(vrot), sin(vrot), cos(vrot));
-        gl_Position = vec4(dir*position.xy*rot, 0.,1.);
+        gl_Position = vec4(amp*dir*position.xy*rot, 0.,1.);
     }
 `;
 
@@ -18,11 +19,18 @@ const fs = /*glsl*/`#version 300 es
     uniform vec2 resolution;
     uniform vec2 mouse;
     uniform float time;
+    uniform vec3 hsl;
     #define glf gl_FragCoord
 
+	vec3 hsv2rgb(vec3 c){
+	    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+	    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+	    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+	}
     void main() {
     	vec2 uv = gl_FragCoord.xy/resolution.xy;
-    	vec3 col = vec3(0); //cos(uv.xyy*time+vec3(1,2,3))*.5+.5;
+    	// vec3 col = vec3(0); //cos(uv.xyy*time+vec3(1,2,3))*.5+.5;
+    	vec3 col = hsv2rgb(hsl);
         fragColor = vec4(col, 1.);
     }
 `;
@@ -38,9 +46,9 @@ var seed = 404;
 function setupcb(pgm){
 	model = buildModel(1, 0, 0, 0);
 	// console.log(model.i.length)
-	// let quads = getQuads(model, .0025);
-	// prog.arrays.position.data = quads;
-	prog.arrays.position.data = getLines(model);
+	let quads = getQuads(model, .0033);
+	prog.arrays.position.data = quads;
+	// prog.arrays.position.data = getLines(model);
 	pgm.draw = pgm.ctl.draw2;
 }
 
@@ -53,7 +61,7 @@ function getLines(model){
 	for(let el of model.i){
 		let a = model.v[el[0]].slice(0,3);
 		let b = model.v[el[1]].slice(0,3);	
-		arr.push(...a, ...b)	
+		arr.push(...a, ...b);	
 	}
 	return arr;
 }
@@ -113,7 +121,7 @@ function adds(v, s){
 
 const prog = {
 	setupcb: setupcb,
-	drawMode: 'LINES',
+	// drawMode: 'LINES',
 	arrays: {
 		position: {
 			components: 3,
@@ -124,7 +132,9 @@ const prog = {
 	vs:vs,
 	uniforms: {
 		vrot: 0,
-		dir: [1,1]
+		dir: [1,1],
+		amp: .9,
+		hsl: [.5,1,.8]
 	}
 };
 
