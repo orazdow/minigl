@@ -59,7 +59,7 @@ class Glview{
     constructor(canvas, pgms, res, limitfps, gui, guiobj){
     	this.pgms = (pgms instanceof Array)? pgms : [pgms];
         this.prog = this.pgms[0];
-        this.gl = canvas.getContext("webgl2", {premultipliedAlpha: false, antialias: true});
+        this.gl = canvas.getContext("webgl2", {antialias: true});
         if(!this.gl){console.log('no gl context'); return;}
         this.res = res || [500, 500];
         initCanvas(canvas, this.res);
@@ -113,7 +113,6 @@ class Glview{
     }
 
     render(time){
-                    this.gl.clearColor(...this.prog.clearcolor);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
         this.prog.uniforms.time = time*.001;
         this.prog.uniforms.mouse = this.mouse;

@@ -45,10 +45,11 @@ var seed = 404;
 
 function setupcb(pgm){
 	model = buildModel(1, 0, 0, 0);
-	// console.log(model.i.length)
-	let quads = getQuads(model, .0033);
-	prog.arrays.position.data = quads;
-	// prog.arrays.position.data = getLines(model);
+	// pgm.max_count = model.i.length*4;
+	// let quads = getQuads(model, .0033);
+	// prog.arrays.position.data = quads;
+	pgm.max_count = model.i.length*2;
+	prog.arrays.position.data = getLines(model);
 	pgm.draw = pgm.ctl.draw2;
 }
 
@@ -119,9 +120,26 @@ function adds(v, s){
     return [v[0]+s, v[1]+s, v[2]+s, 1];
 }
 
+const gui = {
+	name: 'lsys',
+	open: true,
+	updateFrame: true,
+	fields: [
+		{
+			lev: 1,
+			min: 0,
+			max: 1,
+			step: .01,
+			onChange: (v)=>{
+				prog.count = Math.round(v*prog.max_count);
+			}	
+		}
+	]
+}
+
 const prog = {
 	setupcb: setupcb,
-	// drawMode: 'LINES',
+	drawMode: 'LINES',
 	arrays: {
 		position: {
 			components: 3,
@@ -135,7 +153,8 @@ const prog = {
 		dir: [1,1],
 		amp: .9,
 		hsl: [.5,1,.8]
-	}
+	},
+	gui: gui
 };
 
 export default prog;
