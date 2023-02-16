@@ -48,12 +48,13 @@ const tau = 6.28318530718;
 function setupcb(pgm){
 	model = buildModel(1, 0, 0, 0);
 
-	// pgm.max_count = model.i.length*4;
-	// prog.arrays.position.data = getQuads(model, .0033);
+	pgm.max_count = model.i.length*4;
+	prog.arrays.position.data = getQuads(model, .0023);
+	prog.drawMode = 'TRIANGLES';
 
-	pgm.max_count = model.i.length*2;
-	prog.arrays.position.data = getLines(model);
-	prog.drawMode = 'LINES';
+	// pgm.max_count = model.i.length*2;
+	// prog.arrays.position.data = getLines(model);
+	// prog.drawMode = 'LINES';
 
 	pgm.draw = drawcb;
 }
@@ -91,30 +92,30 @@ function getLines(model){
 	return arr;
 }
 
-function getQuads(model, w=.1, d=.0){
-	let arr = []
+function getQuads(model, w=.1){
+	let arr = [];
 	for(let el of model.i){
 		let a = model.v[el[0]];
 		let b = model.v[el[1]];
-		let q = lineQuad(a, b, w, d);
+		let q = triangleQuad(a, b, w);
 		arr.push(...q[0].slice(0,3),
-			...q[1].slice(0,3),
-			...q[2].slice(0,3),
-			...q[3].slice(0,3));
+				...q[1].slice(0,3),
+				...q[2].slice(0,3),
+				...q[3].slice(0,3),
+				...q[4].slice(0,3),
+				...q[5].slice(0,3),);		
 	}
 	return arr;
 }
 
-function lineQuad(a, b, w=.1, d=.0){
+function triangleQuad(a, b, w=.1){
 	let n = normal(a, b);
-	let l = d? mults(normalize(subv(b,a)),-d):[0,0,0,0];
-	let v1 = addv(mults(n, -w), addv(a,l));
-	let v2 = addv(mults(n, w), addv(a,l));
-	let v3 = addv(mults(n, -w), subv(b,l));
-	let v4 = addv(mults(n, w), subv(b,l)); 
-	return [v1,v2,v3,v4];
+	let v1 = addv(mults(n, -w), a);
+	let v2 = addv(mults(n,  w), a);
+	let v3 = addv(mults(n, -w), b);
+	let v4 = addv(mults(n,  w), b); 
+	return [v1,v2,v3, v2,v3,v4];
 }
-
 
 function normal(a, b){
 	let d = subv(b, a);

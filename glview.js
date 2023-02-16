@@ -1,5 +1,6 @@
-import * as mgl from './minigl.js';
 /* {createShaderProgram, createBuffers, enableAttributes, setUniforms, drawObj} */
+import * as mgl from './minigl.js';
+
 const def_vs =/*glsl*/`#version 300 es
 	in vec3 position;
 	in vec3 color;
