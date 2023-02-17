@@ -1,26 +1,37 @@
-import lsystem from './l-system.js';
-import rules from './selectrules.js';
+import {solids, polyhedra, models} from './model.js';
+import {loadObj, edgeList} from './loader.js';
+import {mat_mul_4, create_rot, create_proj} from './render.js';
 
 const vs =/*glsl*/`#version 300 es
+	precision mediump float;
 	in vec3 position;
-	uniform float vrot;
-	uniform float amp;
-	uniform vec2 dir;
-    
-    void main() {
-    	mat2 rot = mat2(cos(vrot), -sin(vrot), sin(vrot), cos(vrot));
-        gl_Position = vec4(amp*dir*position.xy*rot, 0.,1.);
+	uniform float time;
+	uniform vec3 ax;
+
+	mat3 rotz(float t){
+		return mat3(cos(t), -sin(t), 0, sin(t), cos(t), 0, 0,0,1);
+	}
+	mat3 roty(float t){
+		return mat3(cos(t), 0, sin(t), 0, 1, 0, -sin(t), 0, cos(t));
+	}
+	mat3 rotx(float t){
+		return mat3(1, 0, 0, 0, cos(t), -sin(t), 0, sin(t), cos(t));
+	} 
+
+    void main(){
+    	mat3 r = rotz(time*ax.z)*roty(time*ax.y)*rotx(ax.x);
+        gl_Position = vec4(position*r, 1);
     }
 `;
 
 const fs = /*glsl*/`#version 300 es
     precision mediump float;
-    out vec4 fragColor;
+
     uniform vec2 resolution;
     uniform vec2 mouse;
     uniform float time;
     uniform vec3 hsl;
-    #define glf gl_FragCoord
+    out vec4 fragColor;
 
 	vec3 hsv2rgb(vec3 c){
 	    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
@@ -29,57 +40,32 @@ const fs = /*glsl*/`#version 300 es
 	}
     void main() {
     	vec2 uv = gl_FragCoord.xy/resolution.xy;
-    	// vec3 col = vec3(0); //cos(uv.xyy*time+vec3(1,2,3))*.5+.5;
     	vec3 col = hsv2rgb(hsl);
         fragColor = vec4(col, 1.);
     }
 `;
 
 var model;
-var lev = 1;
-var n_i = 0; 
-var rot_n = 4;
-var mirror = true;
-var theta = 0;
-var recenter = false;
-var seed = 404; 
-const tau = 6.28318530718;
 
-function setupcb(pgm){
-	model = buildModel(1, 0, 0, 0);
+function setup(pgm){
+	model = load(polyhedra, 8, .8);
+	let rmat = create_rot(.2, -.1, -.1);
+	model.v = mat_mul_4(model.v, rmat); 
 
 	// pgm.max_count = model.i.length*4;
-	// prog.arrays.position.data = getQuads(model, .0023);
+	// prog.arrays.position.data = getQuads(model, .0036);
 	// prog.drawMode = 'TRIANGLES';
 
 	pgm.max_count = model.i.length*2;
 	prog.arrays.position.data = getLines(model);
 	prog.drawMode = 'LINES';
-
-	pgm.draw = drawcb;
 }
 
-function rendercb(pgm){}
-
-function drawcb(pgm){
-	let gl = pgm.ctl.gl;
-	let mgl = pgm.ctl.mgl;
-    let d = tau/rot_n;
-    for(let t = 0; t < tau; t+= d){
-        pgm.uniforms.vrot = t;
-        pgm.uniforms.dir = [1,1];
-        mgl.setUniforms(gl, pgm);
-        mgl.drawObj(gl, pgm);
-        if(mirror){
-	        pgm.uniforms.dir = [-1,1];
-	        mgl.setUniforms(gl, pgm);
-	        mgl.drawObj(gl, pgm);
-        }
-    }
-}
-
-function buildModel(rule){
-	return lsystem(rules[rule], n_i, recenter, seed);
+function load(set, idx, amp=.5){
+    let obj = loadObj(Object.values(set)[idx], amp);
+    let o = {v: obj.vertices.v, i: obj.indices.v};
+    o.i = edgeList(o.i);
+    return o;
 }
 
 function getLines(model){
@@ -146,52 +132,52 @@ function adds(v, s){
 }
 
 const gui = {
-	name: 'lsys',
+	name: 'geom',
 	open: true,
-	updateFrame: true,
 	fields: [
 		{
-			lev: 1,
+			z: 0,
 			min: 0,
 			max: 1,
 			step: .01,
 			onChange: (v)=>{
-				prog.count = Math.round(v*prog.max_count);
-			}	
-		},
-		{
-			rot: rot_n,
-			min: 1,
-			max: 6,
-			step: 1,
-			onChange: (v)=>{
-				rot_n = v;
+				prog.uniforms.ax[2] = v;
 			}
 		},
 		{
-			mirror: mirror,
+			y: 0,
+			min: 0,
+			max: 1,
+			step: .01,
 			onChange: (v)=>{
-				mirror = v;
+				prog.uniforms.ax[1] = v;
+			}
+		},
+		{
+			x: 0,
+			min: 0,
+			max: 1,
+			step: .01,
+			onChange: (v)=>{
+				prog.uniforms.ax[0] = v;
 			}
 		}
 	]
 }
 
 const prog = {
-	setupcb: setupcb,
+	fs: fs,
+	vs: vs,
 	arrays: {
 		position: {
 			components: 3,
 			data: [-1,-1,0, 1,-1,0,  -1,1,0,  1,1,0]
 		}
 	},
-	fs:fs,
-	vs:vs,
+	setupcb: setup,
 	uniforms: {
-		vrot: 0,
-		dir: [1,1],
-		amp: .9,
-		hsl: [.5,1,.8]
+		hsl: [.5,1,.8],
+		ax: [.0,.0,.0]
 	},
 	gui: gui
 };

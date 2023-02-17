@@ -8,6 +8,7 @@ import blob from './programs/sdfblob.js';
 import sdf from './programs/sdf.js';
 import lsys from './programs/lsys.js';
 import quad from './programs/quadlines.js';
+import geom from './programs/geom.js';
 
 
 const canvas = document.querySelector('canvas');
@@ -24,6 +25,6 @@ const maingui = {
 	}]
 }
 let demo = [sdf, blob, lines, waves];
-const glview = new Glview(canvas, quad, [500,500], 1, gui, maingui);
+const glview = new Glview(canvas, [quad,geom], [500,500], 0, gui, maingui);
 // glview.start()
 glview.frame()
