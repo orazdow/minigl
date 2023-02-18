@@ -10,7 +10,7 @@ const fs = /*glsl*/`#version 300 es
 
     void main() {
         vec2 uv = (2.*gl_FragCoord.xy-resolution)/resolution.y;
-        float f = sin(8.*dot(uv,uv)+time)*.5+.5;
+        float f = sin(8.*dot(uv,uv)+time*6.)*.5+.5;
     	vec3 col = vcolor + .5*a*(cos(time+(g.x+g.y)/20.)*.2+.2)*f;
         fragColor = vec4(col*col, 1.);
     }

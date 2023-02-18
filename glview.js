@@ -57,7 +57,7 @@ const def_prog = {
 
 class Glview{
 
-    constructor(canvas, pgms, res, limitfps, gui, guiobj){
+    constructor(canvas, pgms, res, limitfps, start, gui, guiobj){
     	this.pgms = (pgms instanceof Array)? pgms : [pgms];
         this.prog = this.pgms[0];
         this.gl = canvas.getContext("webgl2", {premultipliedAlpha: true, antialias: true});
@@ -81,6 +81,7 @@ class Glview{
         this.gl.viewport(0, 0, this.res[0], this.res[1]);
         if(!this.init(this.gl, this.pgms)) this.start = this.frame = ()=>{};
         if(gui) initGui(gui, this, guiobj);
+        // if(start) this.start(); else this.frame();
     }
 
     start(){
@@ -210,6 +211,7 @@ function addGuiObj(guiTarget, guiObj, ctl){
     for(let o of guiObj.fields||[]){
         let f;
         if(f = o.onChange){ delete o.onChange; }
+        o = getArrParams(o);
         let params = [o, Object.keys(o)[0], ...Object.values(o).slice(1)];
         let g = guiTarget.add(...params);
         if(f){
@@ -219,6 +221,16 @@ function addGuiObj(guiTarget, guiObj, ctl){
         }
         guiObj.fields[i++].ref = g;
     }       
+}
+
+function getArrParams(o){
+    let e = Object.entries(o)[0];
+    if(e[1] instanceof Array){
+            o[e[0]]= e[1][0];
+            o.min = e[1][1];
+            o.max = e[1][2];
+            o.step = e[1][3];
+    }return o;
 }
 
 export default Glview;

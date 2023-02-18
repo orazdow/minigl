@@ -37,13 +37,14 @@ function createBuffers(gl, obj){
 			gl.vertexAttribPointer(attr.location, attr.components, gl.FLOAT, 0, stride*4, offset*4);
 			gl.enableVertexAttribArray(attr.location);
 		}else{
-			attr.buffer = gl.createBuffer(); 
+			attr.buffer = gl.createBuffer();
 			let count = attr.data.length/attr.components;
 			if(count-Math.floor(count)) console.log(key+': non-integer element count');
 			if(key=='position'){
 				obj.vao = gl.createVertexArray(); 
 				gl.bindVertexArray(obj.vao); 
-			}if(key=='indices'){ 
+			}
+			if(key=='indices'){ 
 				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, attr.buffer);
 				gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(attr.data), gl.STATIC_DRAW);	
 			}else{ 
@@ -58,6 +59,23 @@ function createBuffers(gl, obj){
 	gl.bindVertexArray(null);
 	if(typeof obj.drawMode === 'string') obj.drawMode = gl[obj.drawMode];
 	else if (typeof obj.drawMode !== 'number') obj.drawMode = gl.TRIANGLES;
+}
+
+function setBufferData(gl, obj, attrName, attrObj){
+	let attr = obj.arrays[attrName];
+	if(!attr || !attr.buffer){
+		console.log('no buffer exists for', attrName); return;
+	}
+	if(!attrObj.data || !attrObj.components){
+		console.log('setBufferData object must have data and compnent fields'); return;
+	}
+	gl.bindBuffer(gl.ARRAY_BUFFER, attr.buffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attrObj.data), gl.STATIC_DRAW);
+	let stride = attr.stride || 0;
+	let offset = attr.offset || 0;
+	gl.vertexAttribPointer(attr.location, attr.components, gl.FLOAT, 0, stride*4, offset*4);
+	if(attrName == 'position') setCount(obj);
+	// indices
 }
 
 function enableAttributes(gl, obj){
@@ -114,9 +132,9 @@ function utypes(gl, type, size, loc){
 		case gl.FLOAT_VEC2 : return v ? (gl,v)=>{gl.uniform2fv(loc, v)} : (gl,v)=>{gl.uniform2f(loc, ...v)};
 		case gl.FLOAT_VEC3 : return v ? (gl,v)=>{gl.uniform3fv(loc, v)} : (gl,v)=>{gl.uniform3f(loc, ...v)};
 		case gl.FLOAT_VEC4 : return v ? (gl,v)=>{gl.uniform4fv(loc, v)} : (gl,v)=>{gl.uniform4f(loc, ...v)};
-		case gl.FLOAT_MAT2 : return (gl,v)=>{gl.uniformMatrix2fv(loc, v)};
-		case gl.FLOAT_MAT3 : return (gl,v)=>{gl.uniformMatrix3fv(loc, v)};
-		case gl.FLOAT_MAT4 : return (gl,v)=>{gl.uniformMatrix4fv(loc, v)};
+		case gl.FLOAT_MAT2 : return (gl,v)=>{gl.uniformMatrix2fv(loc, false, v)};
+		case gl.FLOAT_MAT3 : return (gl,v)=>{gl.uniformMatrix3fv(loc, false, v)};
+		case gl.FLOAT_MAT4 : return (gl,v)=>{gl.uniformMatrix4fv(loc, false, v)};
 		case gl.SAMPLER_2D : (gl,v)=>{gl.uniform1i(loc, v)};
 		case gl.SAMPLER_3D : (gl,v)=>{gl.uniform1i(loc, v)};
 		case gl.SAMPLER_2D_ARRAY : (gl,v)=>{gl.uniform1iv(loc, v)};
@@ -128,4 +146,4 @@ function utypes(gl, type, size, loc){
 	}
 }
 
-export {createShaderProgram, createBuffers, enableAttributes, setUniforms, drawObj}
+export {createShaderProgram, createBuffers, setBufferData, enableAttributes, setUniforms, drawObj}

@@ -48,13 +48,13 @@ const tau = 6.28318530718;
 function setupcb(pgm){
 	model = buildModel(1, 0, 0, 0);
 
-	// pgm.max_count = model.i.length*4;
-	// prog.arrays.position.data = getQuads(model, .0023);
-	// prog.drawMode = 'TRIANGLES';
+	pgm.max_count = model.i.length*6;
+	prog.arrays.position.data = getQuads(model, .0023);
+	prog.drawMode = 'TRIANGLES';
 
-	pgm.max_count = model.i.length*2;
-	prog.arrays.position.data = getLines(model);
-	prog.drawMode = 'LINES';
+	// pgm.max_count = model.i.length*2;
+	// prog.arrays.position.data = getLines(model);
+	// prog.drawMode = 'LINES';
 
 	pgm.draw = drawcb;
 }
