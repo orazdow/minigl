@@ -60,8 +60,8 @@ var p_far = 6;
 function setup(pgm){
 	pgm.uniforms.pmat = mat4.create();
 	mat4.perspective(pgm.uniforms.pmat, p_fov, 1, p_near,p_far);
-	// prog.drawMode = 'TRIANGLES';
-	prog.drawMode = 'LINES';
+	prog.drawMode = 'TRIANGLES';
+	// prog.drawMode = 'LINES';
 	loadModel(pgm, polyhedra, 8, .8, true);
 }
 
@@ -75,7 +75,7 @@ function loadModel(pgm, set, idx, amp=.8, tilt){
 	if(pgm.drawMode === 'LINES'){
 		pgm.arrays.position.data = getLines(model);
 	}else{
-		pgm.arrays.position.data = getQuads(model, .0036);
+		pgm.arrays.position.data = getPrisms(model, .005);//getQuads(model, .0036);
 	} 
 
 }
@@ -103,6 +103,21 @@ function getLines(model){
 	return arr;
 }
 
+function getPrisms(model, w=.1){
+	let arr = [];
+	for(let el of model.i){
+		let a = model.v[el[0]];
+		let b = model.v[el[1]];
+		let p = trianglePrism(a, b, w);
+		for(let t of p){
+			for(let v of t){
+				arr.push(...v.slice(0,3));
+			}
+		}		
+	}
+	return arr;
+}
+
 function getQuads(model, w=.1){
 	let arr = [];
 	for(let el of model.i){
@@ -119,6 +134,26 @@ function getQuads(model, w=.1){
 	return arr;
 }
 
+function trianglePrism(a, b, w=.1){
+	let n = normal(a, b);  
+	let v_al = addv(mults(n, -w), a);
+	let v_ar = addv(mults(n,  w), a);
+	let v_bl = addv(mults(n, -w), b);
+	let v_br = addv(mults(n,  w), b); 
+    let r = 0.86602540379;
+    let n2 = normalize(cross(n, normalize(subv(a, b))));
+    let v_aa = addv(a, mults(n2, 2*w*r));
+    let v_bb = addv(b, mults(n2, 2*w*r));
+    return [
+      [v_al, v_ar, v_bl], 
+      [v_ar, v_bl, v_br],
+      [v_al, v_aa, v_bb],
+      [v_al, v_bb, v_bl],
+      [v_ar, v_aa, v_bb],
+      [v_ar, v_bb, v_br]
+    ]; //no end caps, not concentric with line
+}
+
 function triangleQuad(a, b, w=.1){
 	let n = normal(a, b);
 	let v1 = addv(mults(n, -w), a);
@@ -129,8 +164,13 @@ function triangleQuad(a, b, w=.1){
 }
 
 function normal(a, b){
-	let d = subv(b, a);
-	return normalize([-d[1], d[0], d[2]])
+    let d = subv(a, b);
+    let d2 = [...d];
+    let idx = 2;
+    if(d[0]==0) idx = 0;
+    if(d[1]==0) idx = 1;
+    d[idx] = 0; d2[idx] = 1;
+    return normalize(cross(d, d2)); 
 }
 
 function normalize(v){
