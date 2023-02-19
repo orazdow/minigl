@@ -141,7 +141,7 @@ function trianglePrism(a, b, w=.1){
 	let v_bl = addv(mults(n, -w), b);
 	let v_br = addv(mults(n,  w), b); 
     let r = 0.86602540379;
-    let n2 = normalize(cross(n, normalize(subv(a, b))));
+    let n2 = normalize(cross(n, subv(a, b)));
     let v_aa = addv(a, mults(n2, 2*w*r));
     let v_bb = addv(b, mults(n2, 2*w*r));
     return [
