@@ -7,16 +7,16 @@ const pgms = [prog, {}];
 const gui = new dat.GUI();
 
 let animate = false;
+
 const maingui = {
-	fields: [{
-		animate: animate,
-		onChange: (v)=>{
-			if(v) maingui.ctl.start();
-			else maingui.ctl.stop();
-		}
-	}]
+    fields: [{
+        animate: animate,
+        onChange: (v)=>{
+            if(v) maingui.ctl.start();
+            else maingui.ctl.stop();
+        }
+    }]
 }
 
-const glview = new Glview(canvas, pgms, [500,500], 1, gui, maingui);
-// glview.start()
-glview.frame()
+const glview = new Glview(canvas, pgms, [500,500], 0, gui, maingui);
+if (animate) glview.start(); else glview.frame();
