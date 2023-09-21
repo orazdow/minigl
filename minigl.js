@@ -1,4 +1,3 @@
-/*(c) shellderr 2023 BSD-2*/
 
 function createShaderProgram(gl, obj){
     let vs = gl.createShader(gl.VERTEX_SHADER);
@@ -79,7 +78,49 @@ function enableAttributes(gl, obj){
 
 function setUniforms(gl, obj){
     for(let u in obj.uniforms)
-        if(obj.uniformSetters[u])obj.uniformSetters[u](gl, obj.uniforms[u]);
+        if(obj.uniformSetters[u]) obj.uniformSetters[u](gl, obj.uniforms[u]);
+}
+
+function loadTextures(gl, obj){ 
+    let i = 0;
+    for(let o of obj.textures){
+        if(!o || !o.src) return;
+        o.index = i++;
+        if(!o.type || o.type === 'TEXTURE_2D') 
+            loadTexture2D(gl, obj, o);
+    }
+}
+
+function loadTexture2D(gl, obj, tex){
+    tex.texture = gl.createTexture();
+    const img = new Image();
+    let fmt = tex.format ? gl[tex.format] : gl.RGBA; 
+    gl.useProgram(obj.shaderProgram);
+    img.onload = ()=>{
+        gl.bindTexture(gl.TEXTURE_2D, tex.texture); 
+        gl.texImage2D(gl.TEXTURE_2D, 0, fmt, fmt, gl.UNSIGNED_BYTE, img);
+        texOptions2D(gl, img, tex);
+        gl.activeTexture(gl.TEXTURE0 + tex.index);
+        obj.uniformSetters[tex.uniform](gl, tex.index);
+    }
+    img.src = tex.src;
+}
+
+function isPowerOf2(value){
+    return (value & (value - 1)) === 0;
+}
+
+function texOptions2D(gl, img, tex){
+    if(tex.mipmap && isPowerOf2(img.width) && isPowerOf2(img.height))
+        gl.generateMipmap(gl.TEXTURE_2D);
+    let wrap_s = gl[tex.wrap_s || tex.wrap] || gl.REPEAT;
+    let wrap_t = gl[tex.wrap_t || tex.wrap] || gl.REPEAT;
+    let min = gl[tex.min] || gl.LINEAR; 
+    let mag = gl[tex.mag] || gl.LINEAR;
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap_s);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap_t);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, min); 
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, mag); 
 }
 
 function drawObj(gl, obj){
@@ -130,4 +171,4 @@ function utypes(gl, type, size, loc){
     }
 }
 
-export {createShaderProgram, setBuffers, enableAttributes, setUniforms, drawObj}
+export {createShaderProgram, setBuffers, loadTextures, enableAttributes, setUniforms, drawObj}

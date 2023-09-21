@@ -1,6 +1,3 @@
-/*(c) shellderr 2023 BSD-2*/
-
-// createShaderProgram, setBuffers, enableAttributes, setUniforms, drawOb
 import * as mgl from './minigl.js';
 
 const def_vs =/*glsl*/`#version 300 es
@@ -79,6 +76,7 @@ class Glview{
         this.gl.disable(this.gl.DEPTH_TEST);
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+        this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
         this.gl.viewport(0, 0, this.res[0], this.res[1]);
 
         if(!this.init(this.gl, this.pgms)){this.start = this.frame = ()=>{}; return;}
@@ -156,6 +154,7 @@ class Glview{
             pgm.setupcb(pgm);
             if(!pgm.draw) pgm.draw = ()=>{mgl.drawObj(this.gl, pgm)};
             mgl.setBuffers(gl, pgm);
+            mgl.loadTextures(gl, pgm);
             for(let p of pgm.chain||[]){
                 merge(p, {...def_prog, count: pgm.count});
                 p.uniforms.resolution = this.res;
