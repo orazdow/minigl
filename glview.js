@@ -2,11 +2,14 @@ import * as mgl from './minigl.js';
 
 const def_vs =/*glsl*/`#version 300 es
     in vec3 position;
+    in vec2 texcoord;
     in vec3 color;
+    out vec2 vtex;
     out vec3 vcolor;
-    
+
     void main() {
         vcolor = color;
+        vtex = texcoord;
         gl_Position = vec4(position, 1.);
     }
 `;
@@ -14,23 +17,28 @@ const def_vs =/*glsl*/`#version 300 es
 const def_fs = /*glsl*/`#version 300 es
     precision mediump float;
     in vec3 vcolor;
+    in vec2 vtex;
     out vec4 fragColor;
     uniform vec2 resolution;
     uniform vec2 mouse;
     uniform float time;
-    #define res resolution
 
     void main(){
-        // fragColor = vec4(((2.*gl_FragCoord.xy-res)/res).xyx*cos(time+vec3(0,1,3))*.5+.5, 1);
-        fragColor = vec4(0,0,0,1);
+        vec2 uv = (2.*gl_FragCoord.xy-resolution)/resolution.y;
+        vec3 c = uv.xyx*cos(time+vec3(0,1,3))*.5+.5;
+        fragColor = vec4(c, 1);
     }
 `;
 
 const def_prog = {
     arrays: {
         position: {
-            components: 3,
-            data: [-1,-1,0, 1,-1,0,  -1,1,0,  1,1,0]
+            components: 2,
+            data: [-1,-1, 1,-1,  -1,1,  1,1]
+        },
+        texcoord: {
+            components: 2,
+            data: [0,0, 1,0, 0,1, 1,1]
         },
         color: {
             components: 3,
@@ -46,10 +54,14 @@ const def_prog = {
     vs: def_vs,
     fs: def_fs,
     drawMode: 'TRIANGLE_STRIP',
-    textures : null,
-    rendercb : ()=>{},
-    setupcb : ()=>{},
-    chain : [],
+    textures: [],
+    targets: {
+        texture: null,
+        renderbuffer: null
+    },
+    rendercb: ()=>{},
+    setupcb: ()=>{},
+    chain: [],
     shaderProgram: null,
     on: true
 }
@@ -73,12 +85,12 @@ class Glview{
             this.mouse[0] = e.offsetX/this.res[0];
             this.mouse[1] = 1.-e.offsetY/this.res[1];
         }
+        def_prog.ctl = this;
         this.gl.disable(this.gl.DEPTH_TEST);
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
         this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
         this.gl.viewport(0, 0, this.res[0], this.res[1]);
-
         if(!this.init(this.gl, this.pgms)){this.start = this.frame = ()=>{}; return;}
         if(gui) initGui(gui, this, guiobj);
         this.gl.clearColor(...this.prog.clearcolor);
@@ -147,7 +159,7 @@ class Glview{
 
     init(gl, pgms){
         for(let pgm of pgms){
-            merge(pgm, def_prog, this);
+            merge(pgm, def_prog);
             pgm.uniforms.resolution = this.res;
             pgm.uniforms.time = 0;
             if(!mgl.createShaderProgram(gl, pgm)) return null; 

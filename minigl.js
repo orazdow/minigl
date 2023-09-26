@@ -83,7 +83,7 @@ function setUniforms(gl, obj){
 
 function loadTextures(gl, obj){ 
     window.texindex ??= 0; 
-    for(let o of obj.textures){
+    for(let o of obj.textures || []){
         if(!o || !o.src) return;
         o.index = window.texindex++;
         if(!o.type || o.type === 'TEXTURE_2D') 
@@ -101,7 +101,8 @@ function loadTexture2D(gl, obj, tex){
         gl.bindTexture(gl.TEXTURE_2D, tex.texture); 
         gl.texImage2D(gl.TEXTURE_2D, 0, fmt, fmt, gl.UNSIGNED_BYTE, img);
         texOptions2D(gl, img, tex);
-        obj.uniformSetters[tex.uniform](gl, tex.index);
+        if(obj.uniformSetters[tex.uniform])
+            obj.uniformSetters[tex.uniform](gl, tex.index);
     }
     img.src = tex.src;
 }
@@ -135,6 +136,30 @@ function setCount(obj){
         obj.arrays.position.data.length/(obj.arrays.position.stride||obj.arrays.position.components);
         obj.count = count;          
     }
+}
+
+function textureBufferTarget(gl, width, height){
+    window.texindex ??= 0;
+    const texture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0 + window.texindex);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    const framebuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    return {texture: texture, framebuffer: framebuffer, texindex: window.texindex++};
+}
+
+function renderBufferTarget(gl, width, height){
+    const framebuffer = gl.createFramebuffer();
+    const renderbuffer = gl.createRenderbuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.RGBA8, width, height);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, renderbuffer);
+    return {framebuffer: framebuffer, renderbuffer: renderbuffer};
 }
 
 function uniformSetters(gl, program){ 
@@ -171,4 +196,4 @@ function utypes(gl, type, size, loc){
     }
 }
 
-export {createShaderProgram, setBuffers, loadTextures, enableAttributes, setUniforms, drawObj}
+export {createShaderProgram, setBuffers, enableAttributes, setUniforms, drawObj, loadTextures, textureBufferTarget, renderBufferTarget}

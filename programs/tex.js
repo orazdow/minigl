@@ -76,4 +76,17 @@ const prog = {
     drawMode: 'TRIANGLES'
 }
 
-export default prog;
+const prog2 = {
+    fs: fs,
+    textures: [
+        {
+            uniform: 'u_tex',
+            type: null,
+            src: '/programs/m-2.jpg',
+            min: 'NEAREST',
+            mag: 'NEAREST'
+        }
+    ],
+}
+
+export default prog2;
