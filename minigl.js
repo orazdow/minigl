@@ -82,10 +82,10 @@ function setUniforms(gl, obj){
 }
 
 function loadTextures(gl, obj){ 
-    let i = 0;
+    window.texindex ??= 0; 
     for(let o of obj.textures){
         if(!o || !o.src) return;
-        o.index = i++;
+        o.index = window.texindex++;
         if(!o.type || o.type === 'TEXTURE_2D') 
             loadTexture2D(gl, obj, o);
     }
@@ -97,10 +97,10 @@ function loadTexture2D(gl, obj, tex){
     let fmt = tex.format ? gl[tex.format] : gl.RGBA; 
     gl.useProgram(obj.shaderProgram);
     img.onload = ()=>{
+        gl.activeTexture(gl.TEXTURE0 + tex.index);
         gl.bindTexture(gl.TEXTURE_2D, tex.texture); 
         gl.texImage2D(gl.TEXTURE_2D, 0, fmt, fmt, gl.UNSIGNED_BYTE, img);
         texOptions2D(gl, img, tex);
-        gl.activeTexture(gl.TEXTURE0 + tex.index);
         obj.uniformSetters[tex.uniform](gl, tex.index);
     }
     img.src = tex.src;
