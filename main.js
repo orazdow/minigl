@@ -1,6 +1,7 @@
 import Glview from './glview.js';
 import * as dat from "./lib/dat.gui.module.min.js";
-import pgm from './programs/tex.js';
+import tex from './programs/tex.js';
+import feedback from './programs/feedback.js';
 
 const canvas = document.querySelector('canvas');
 const gui = new dat.GUI();
@@ -17,5 +18,6 @@ const maingui = {
     }]
 }
 
-const glview = new Glview(canvas, pgm, [500,500], 50, gui, maingui);
+const pgm = [tex, feedback];
+const glview = new Glview(canvas, pgm, [500,500], 0, gui, maingui);
 if (animate) glview.start(); else glview.frame();

@@ -53,12 +53,14 @@ const def_prog = {
     },
     vs: def_vs,
     fs: def_fs,
+    res: [500,500],
     drawMode: 'TRIANGLE_STRIP',
     textures: [],
     targets: {
         texture: null,
         renderbuffer: null
     },
+    draw: null,
     rendercb: ()=>{},
     setupcb: ()=>{},
     chain: [],
@@ -86,6 +88,7 @@ class Glview{
             this.mouse[1] = 1.-e.offsetY/this.res[1];
         }
         def_prog.ctl = this;
+        def_prog.res = this.res;
         this.gl.disable(this.gl.DEPTH_TEST);
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
@@ -117,6 +120,7 @@ class Glview{
         if(this.pgms[idx]){
             if(this.prog._gui) this.prog._gui.hide();
             this.prog = this.pgms[idx];
+            activePgm(this.gl, this.prog);
             this.gl.clearColor(...this.prog.clearcolor);
             this.frame();
             if(this.prog._gui) this.prog._gui.show();
@@ -128,20 +132,19 @@ class Glview{
     }
 
     render(time){
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
         this.prog.uniforms.time = time*.001;
         this.prog.uniforms.mouse = this.mouse;
         mgl.enableAttributes(this.gl, this.prog);
         this.prog.rendercb(this.prog);
         mgl.setUniforms(this.gl, this.prog);
-        this.prog.draw(this.prog);
+        this.prog.draw(this.gl, this.prog);
         for(let p of this.prog.chain) if(p.on){
             p.uniforms.time = time*.01;
             p.uniforms.mouse = this.mouse;
             mgl.enableAttributes(this.gl, p);
             p.rendercb(p);
             mgl.setUniforms(this.gl, p);
-            mgl.drawObj(this.gl, p);            
+            p.draw(this.gl, p);          
         }
     }
 
@@ -164,7 +167,8 @@ class Glview{
             pgm.uniforms.time = 0;
             if(!mgl.createShaderProgram(gl, pgm)) return null; 
             pgm.setupcb(pgm);
-            if(!pgm.draw) pgm.draw = ()=>{mgl.drawObj(this.gl, pgm)};
+            setTargets(gl, pgm);
+            setDraw(pgm);
             mgl.setBuffers(gl, pgm);
             mgl.loadTextures(gl, pgm);
             for(let p of pgm.chain||[]){
@@ -173,10 +177,25 @@ class Glview{
                 p.uniforms.time = 0;
                 if(!mgl.createShaderProgram(gl, p)) return null;
                 p.setupcb(p);
+                setDraw(gl, pgm);
                 mgl.setBuffers(gl, p);
+                mgl.loadTextures(gl, pgm);
             }
-        } return 1;
+        } 
+        activePgm(gl, pgms[0]);
+        return 1;
     }
+};
+
+function activePgm(gl, pgm){
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    let t = pgm?.textures[0]?.texture;
+    if(t) gl.bindTexture(gl.TEXTURE_2D, t);
+}
+
+function merge(dest, template){ 
+    for(let prop in template) 
+        if(dest[prop] == null) dest[prop] = template[prop];
 }
 
 function initCanvas(canvas, res){
@@ -186,9 +205,49 @@ function initCanvas(canvas, res){
     canvas.style.height = res[1]+'px';    
 }
 
-function merge(dest, template){ 
-    for(let prop in template) 
-        if(dest[prop] == null) dest[prop] = template[prop];
+function setDraw(pgm){
+    if(pgm.draw) return;
+    if(pgm.targets.texture && pgm.targets.renderbuffer)
+        pgm.draw = backBufferDraw;
+    else if(pgm.targets.texture)
+        pgm.draw = textureDraw;
+    else pgm.draw = (gl, pgm)=>{
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        mgl.drawObj(gl, pgm);       
+    };
+}
+
+function setTargets(gl, pgm){
+    if(pgm.targets.texture)
+        pgm.targets.texture = mgl.textureBufferTarget(gl, ...pgm.res);
+    if(pgm.targets.renderbuffer)
+        pgm.targets.renderbuffer = mgl.renderBufferTarget(gl, ...pgm.res);
+}
+
+function textureDraw(gl, pgm){
+    gl.viewport(0, 0, ...pgm.res);
+    gl.bindTexture(gl.TEXTURE_2D, pgm.targets.texture.texture);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, pgm.targets.texture.framebuffer);
+    mgl.drawObj(gl, pgm);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);  
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    mgl.drawObj(gl, pgm);
+}
+
+function backBufferDraw(gl, pgm){
+    gl.viewport(0, 0, ...pgm.res);  
+    gl.bindFramebuffer(gl.FRAMEBUFFER, pgm.targets.renderbuffer.framebuffer);
+    mgl.drawObj(gl, pgm);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    mgl.drawObj(gl, pgm);
+
+    gl.bindTexture(gl.TEXTURE_2D, pgm.targets.texture.texture);
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, pgm.targets.renderbuffer.framebuffer);
+    gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, pgm.targets.texture.framebuffer);
+    gl.blitFramebuffer(0,0, ...pgm.res, 0,0, ...pgm.res, gl.COLOR_BUFFER_BIT, gl.NEAREST); 
 }
 
 function initGui(gui, ctl, mainobj){
