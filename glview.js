@@ -61,6 +61,7 @@ const def_prog = {
         renderbuffer: null
     },
     draw: null,
+    clear: true,
     rendercb: ()=>{},
     setupcb: ()=>{},
     chain: [],
@@ -97,6 +98,7 @@ class Glview{
         if(!this.init(this.gl, this.pgms)){this.start = this.frame = ()=>{}; return;}
         if(gui) initGui(gui, this, guiobj);
         this.gl.clearColor(...this.prog.clearcolor);
+        window.ctl = this;
     }
 
     start(){
@@ -168,16 +170,16 @@ class Glview{
             if(!mgl.createShaderProgram(gl, pgm)) return null; 
             pgm.setupcb(pgm);
             setTargets(gl, pgm);
-            setDraw(pgm);
+            setDraw(gl, pgm);
             mgl.setBuffers(gl, pgm);
             mgl.loadTextures(gl, pgm);
             for(let p of pgm.chain||[]){
-                merge(p, {...def_prog, count: pgm.count});
+                merge(p, {...def_prog, count: pgm.count, clear: false});
                 p.uniforms.resolution = this.res;
                 p.uniforms.time = 0;
                 if(!mgl.createShaderProgram(gl, p)) return null;
                 p.setupcb(p);
-                setDraw(gl, pgm);
+                setDraw(gl, p);
                 mgl.setBuffers(gl, p);
                 mgl.loadTextures(gl, pgm);
             }
@@ -205,16 +207,20 @@ function initCanvas(canvas, res){
     canvas.style.height = res[1]+'px';    
 }
 
-function setDraw(pgm){
-    if(pgm.draw) return;
-    if(pgm.targets.texture && pgm.targets.renderbuffer)
-        pgm.draw = backBufferDraw;
-    else if(pgm.targets.texture)
-        pgm.draw = textureDraw;
-    else pgm.draw = (gl, pgm)=>{
+function setDraw(gl, pgm){ 
+    // if(pgm.draw) return;
+    // if(pgm.targets.texture && pgm.targets.renderbuffer)
+    //     pgm.draw = backBufferDraw;
+    // else if(pgm.targets.texture)
+    //     pgm.draw = textureDraw;
+    // else pgm.draw = (gl, pgm)=>{
+    //     gl.clear(gl.COLOR_BUFFER_BIT);
+    //     mgl.drawObj(gl, pgm);       
+    // };
+    pgm.draw = pgm.clear ? (gl, pgm)=>{
         gl.clear(gl.COLOR_BUFFER_BIT);
         mgl.drawObj(gl, pgm);       
-    };
+    } : (gl, pgm)=>{mgl.drawObj(gl, pgm)};
 }
 
 function setTargets(gl, pgm){
