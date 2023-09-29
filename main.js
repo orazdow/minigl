@@ -2,7 +2,7 @@ import Glview from './glview.js';
 import * as dat from "./lib/dat.gui.module.min.js";
 import tex from './programs/tex.js';
 import feedback from './programs/feedback.js';
-import b from './programs/buff2.js';
+import b from './programs/buffertest.js';
 
 const canvas = document.querySelector('canvas');
 const gui = new dat.GUI();

@@ -98,7 +98,6 @@ class Glview{
         if(!this.init(this.gl, this.pgms)){this.start = this.frame = ()=>{}; return;}
         if(gui) initGui(gui, this, guiobj);
         this.gl.clearColor(...this.prog.clearcolor);
-        window.ctl = this;
     }
 
     start(){
@@ -168,20 +167,21 @@ class Glview{
             pgm.uniforms.resolution = this.res;
             pgm.uniforms.time = 0;
             if(!mgl.createShaderProgram(gl, pgm)) return null; 
-            pgm.setupcb(pgm);
             setTargets(gl, pgm);
-            setDraw(gl, pgm);
-            mgl.setBuffers(gl, pgm);
+            setDraw(pgm);
             mgl.loadTextures(gl, pgm);
+            pgm.setupcb(pgm);
+            mgl.setBuffers(gl, pgm);
             for(let p of pgm.chain||[]){
                 merge(p, {...def_prog, count: pgm.count, clear: false});
                 p.uniforms.resolution = this.res;
                 p.uniforms.time = 0;
                 if(!mgl.createShaderProgram(gl, p)) return null;
+                setTargets(gl, p);
+                setDraw(p);
+                mgl.loadTextures(gl, p);
                 p.setupcb(p);
-                setDraw(gl, p);
                 mgl.setBuffers(gl, p);
-                mgl.loadTextures(gl, pgm);
             }
         } 
         activePgm(gl, pgms[0]);
@@ -207,20 +207,16 @@ function initCanvas(canvas, res){
     canvas.style.height = res[1]+'px';    
 }
 
-function setDraw(gl, pgm){ 
-    // if(pgm.draw) return;
-    // if(pgm.targets.texture && pgm.targets.renderbuffer)
-    //     pgm.draw = backBufferDraw;
-    // else if(pgm.targets.texture)
-    //     pgm.draw = textureDraw;
-    // else pgm.draw = (gl, pgm)=>{
-    //     gl.clear(gl.COLOR_BUFFER_BIT);
-    //     mgl.drawObj(gl, pgm);       
-    // };
-    pgm.draw = pgm.clear ? (gl, pgm)=>{
+function setDraw(pgm){ 
+    if(pgm.draw) return;
+    if(pgm.targets.texture && pgm.targets.renderbuffer)
+        pgm.draw = backBufferDraw;
+    else if(pgm.targets.texture)
+        pgm.draw = textureDraw;
+    else pgm.draw = pgm.clear ? (gl, pgm)=>{
         gl.clear(gl.COLOR_BUFFER_BIT);
         mgl.drawObj(gl, pgm);       
-    } : (gl, pgm)=>{mgl.drawObj(gl, pgm)};
+    } : mgl.drawObj;
 }
 
 function setTargets(gl, pgm){
@@ -253,7 +249,8 @@ function backBufferDraw(gl, pgm){
     gl.bindTexture(gl.TEXTURE_2D, pgm.targets.texture.texture);
     gl.bindFramebuffer(gl.READ_FRAMEBUFFER, pgm.targets.renderbuffer.framebuffer);
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, pgm.targets.texture.framebuffer);
-    gl.blitFramebuffer(0,0, ...pgm.res, 0,0, ...pgm.res, gl.COLOR_BUFFER_BIT, gl.NEAREST); 
+    gl.blitFramebuffer(0,0, ...pgm.res, 0,0, ...pgm.res, gl.COLOR_BUFFER_BIT, gl.LINEAR); 
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 }
 
 function initGui(gui, ctl, mainobj){
