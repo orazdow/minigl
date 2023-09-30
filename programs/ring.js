@@ -3,6 +3,7 @@ precision highp float;
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
+uniform float a;
 out vec4 fragColor;
 // uniform sampler2D bufferA;
 
@@ -10,11 +11,10 @@ void main(){
     vec2 uv = gl_FragCoord.xy/resolution.xy;
     float f = 0.;
     for(float i = 0.1; i < .7; i += .1){
-        f = f-mix(f, log(1.1+pow(cos(2./length((uv-(.2+.5*i))*i)+time),3.))/i, .4);
+        f = f-mix(f, log(1.1+pow(cos(a*2./length(i*(uv-(.2+.5*i))*i)+time*.5),3.))/i, .4);
     }
-    vec3 col = 0.5 + 0.5*cos(time+uv.xyx+vec3(0,2,4));
     vec3 c = vec3(f);
-    fragColor = vec4(c*col,f);
+    fragColor = vec4(c*.2,f);
 }
 `;
 
@@ -47,8 +47,7 @@ out vec4 fragColor;
     }
 
 `;
-
-
+/*
 const prog = {
     fs: fs2,
     chain: [
@@ -57,6 +56,30 @@ const prog = {
             // clear: 1
         }
     ]
+}*/
+
+const gui = {
+    name: 'ring',
+    // open: 1,
+    switch: 1,
+    updateFrame: 1,
+    fields: [
+        {
+            a: [.6, .1, 1, .1],
+            onChange: (v)=>{
+                prog.uniforms.a = v;
+            }
+        }
+    ]
+}
+
+const prog = {
+    fs: fs,
+    arrays: {},
+    gui: gui,
+    uniforms: {
+        a: .6
+    }
 }
 
 export default prog;

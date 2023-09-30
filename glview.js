@@ -76,8 +76,9 @@ class Glview{
         this.prog = this.pgms[0];
         this.gl = canvas.getContext("webgl2", {premultipliedAlpha: true, antialias: true});
         if(!this.gl){console.log('no gl context'); return;}
-        this.res = res || [500, 500];
-        initCanvas(canvas, this.res);
+        this.res = initCanvas(canvas, res);
+        def_prog.res = this.res;
+        def_prog.ctl = this;
         this.render = this.render.bind(this);
         this.fpsloop = this.fpsloop.bind(this);
         this.req = null;
@@ -88,8 +89,6 @@ class Glview{
             this.mouse[0] = e.offsetX/this.res[0];
             this.mouse[1] = 1.-e.offsetY/this.res[1];
         }
-        def_prog.ctl = this;
-        def_prog.res = this.res;
         this.gl.disable(this.gl.DEPTH_TEST);
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
@@ -119,12 +118,12 @@ class Glview{
 
     switchProgram(idx){      
         if(this.pgms[idx]){
-            if(this.prog._gui) this.prog._gui.hide();
+            for(let p of [this.prog, ...this.prog.chain]) if(p._gui) p._gui.hide();
             this.prog = this.pgms[idx];
             activeProgram(this.gl, this.prog);
             this.gl.clearColor(...this.prog.clearcolor);
             this.frame();
-            if(this.prog._gui) this.prog._gui.show();
+            for(let p of [this.prog, ...this.prog.chain]) if(p._gui) p._gui.show();               
         }
     }
 
@@ -189,6 +188,12 @@ class Glview{
     }
 };
 
+
+function merge(dest, template){ 
+    for(let prop in template) 
+        if(dest[prop] == null) dest[prop] = template[prop];
+}
+
 function activeProgram(gl, pgm){
     if(pgm.targets.texture){
         gl.activeTexture(gl.TEXTURE0+pgm.targets.texture.texindex);
@@ -201,16 +206,20 @@ function activeProgram(gl, pgm){
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 }
 
-function merge(dest, template){ 
-    for(let prop in template) 
-        if(dest[prop] == null) dest[prop] = template[prop];
-}
-
 function initCanvas(canvas, res){
+    if(!res){
+      if(canvas.width !== canvas.clientWidth ||
+        canvas.height !== canvas.clientHeight){
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+      }
+      return [canvas.width, canvas.height]; 
+    }
     canvas.width = res[0];
     canvas.height = res[1];
     canvas.style.width = res[0]+'px';
-    canvas.style.height = res[1]+'px';    
+    canvas.style.height = res[1]+'px';  
+    return res;  
 }
 
 function setDraw(pgm){ 
@@ -278,7 +287,7 @@ function initGui(gui, ctl, mainobj){
     for(let p of ctl.pgms){
         if(p.gui) initSubGui(gui, p, ctl, p!==ctl.prog);
         for(let _p of p.chain || [])
-            if(_p.gui) initSubGui(gui, _p, ctl);
+            if(_p.gui) initSubGui(gui, _p, ctl, p!==ctl.prog);
     }
 }
 

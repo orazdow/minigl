@@ -2,7 +2,8 @@ import Glview from './glview.js';
 import * as dat from "./lib/dat.gui.module.min.js";
 import tex from './programs/tex.js';
 import feedback from './programs/feedback.js';
-import b from './programs/buffertest.js';
+import buff from './programs/buffertest.js';
+import ring from './programs/ring.js';
 
 const canvas = document.querySelector('canvas');
 const gui = new dat.GUI();
@@ -19,7 +20,10 @@ const maingui = {
     }]
 }
 
-const pgm = [b,feedback, tex];
+feedback.chain = [ring];
+
+const pgm = [buff,feedback, tex];
+// const glview = new Glview(canvas, pgm);
 const glview = new Glview(canvas, pgm, [600,600], 0, gui, maingui);
 if (animate) glview.start(); else glview.frame();
-// todo: onrezize, texture array, multipass test, example progs, loader/normals prog, docs
+// todo: onrezize, texture array, multipass test, target nocanvas, example progs, loader/normals prog, docs
