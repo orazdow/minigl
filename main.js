@@ -19,7 +19,7 @@ const maingui = {
     }]
 }
 
-const pgm = [tex, feedback];
-const glview = new Glview(canvas, b, [500,500], 0, gui, maingui);
+const pgm = [b,feedback, tex];
+const glview = new Glview(canvas, pgm, [600,600], 0, gui, maingui);
 if (animate) glview.start(); else glview.frame();
-// todo: delta or fixed time, onrezize, texture array, multipass test, targets: nocanvas, renderbuffer, example progs, loader/normals prog, docs
+// todo: onrezize, texture array, multipass test, example progs, loader/normals prog, docs

@@ -121,7 +121,7 @@ class Glview{
         if(this.pgms[idx]){
             if(this.prog._gui) this.prog._gui.hide();
             this.prog = this.pgms[idx];
-            activePgm(this.gl, this.prog);
+            activeProgram(this.gl, this.prog);
             this.gl.clearColor(...this.prog.clearcolor);
             this.frame();
             if(this.prog._gui) this.prog._gui.show();
@@ -184,15 +184,21 @@ class Glview{
                 mgl.setBuffers(gl, p);
             }
         } 
-        activePgm(gl, pgms[0]);
+        activeProgram(gl, pgms[0]);
         return 1;
     }
 };
 
-function activePgm(gl, pgm){
+function activeProgram(gl, pgm){
+    if(pgm.targets.texture){
+        gl.activeTexture(gl.TEXTURE0+pgm.targets.texture.texindex);
+        gl.bindTexture(gl.TEXTURE_2D, pgm.targets.texture.texture);
+    }
+    if(pgm.textures[0]){
+        gl.activeTexture(gl.TEXTURE0 + +pgm.textures[0].index);
+        gl.bindTexture(gl.TEXTURE_2D, pgm.textures[0].texture);
+    }
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    let t = pgm?.textures[0]?.texture;
-    if(t) gl.bindTexture(gl.TEXTURE_2D, t);
 }
 
 function merge(dest, template){ 
@@ -220,10 +226,16 @@ function setDraw(pgm){
 }
 
 function setTargets(gl, pgm){
-    if(pgm.targets.texture)
-        pgm.targets.texture = mgl.textureBufferTarget(gl, ...pgm.res);
     if(pgm.targets.renderbuffer)
         pgm.targets.renderbuffer = mgl.renderBufferTarget(gl, ...pgm.res);
+    if(pgm.targets.texture){
+        pgm.targets.texture = mgl.textureBufferTarget(gl, ...pgm.res);
+        if(pgm.targets.textureUniform){
+            gl.useProgram(pgm.shaderProgram);
+            let loc = gl.getUniformLocation(pgm.shaderProgram, pgm.targets.textureUniform);
+            gl.uniform1i(loc, pgm.targets.texture.texindex);
+        }
+    }
 }
 
 function textureDraw(gl, pgm){

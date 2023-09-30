@@ -95,8 +95,8 @@ function loadTexture2D(gl, obj, tex){
     tex.texture = gl.createTexture();
     const img = new Image();
     let fmt = tex.format ? gl[tex.format] : gl.RGBA; 
-    gl.useProgram(obj.shaderProgram);
     img.onload = ()=>{
+        gl.useProgram(obj.shaderProgram);
         gl.activeTexture(gl.TEXTURE0 + tex.index);
         gl.bindTexture(gl.TEXTURE_2D, tex.texture); 
         gl.texImage2D(gl.TEXTURE_2D, 0, fmt, fmt, gl.UNSIGNED_BYTE, img);
@@ -196,4 +196,13 @@ function utypes(gl, type, size, loc){
     }
 }
 
-export {createShaderProgram, setBuffers, enableAttributes, setUniforms, drawObj, loadTextures, textureBufferTarget, renderBufferTarget}
+export {
+    createShaderProgram, 
+    setBuffers, 
+    enableAttributes, 
+    setUniforms, 
+    drawObj, 
+    loadTextures, 
+    textureBufferTarget, 
+    renderBufferTarget
+}

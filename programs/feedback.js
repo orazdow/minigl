@@ -23,8 +23,13 @@ const prog = {
     fs: trails,
     targets: {
         texture: true,
-        renderbuffer: true
-    }
+        renderbuffer: true,
+        textureUniform: 'backbuffer'
+
+    },
+    // uniforms:{
+    //     backbuffer: 1
+    // }
 };
 
 export default prog;
