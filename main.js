@@ -26,4 +26,4 @@ const pgm = [buff,feedback, tex];
 // const glview = new Glview(canvas, pgm);
 const glview = new Glview(canvas, pgm, [600,600], 0, gui, maingui);
 if (animate) glview.start(); else glview.frame();
-// todo: onrezize, texture array, multipass test, target nocanvas, example progs, loader/normals prog, docs
+// texture array, multipass test, target nocanvas, example progs, loader/normals prog, docs
