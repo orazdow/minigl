@@ -35,24 +35,23 @@ If `fps` > 0 the framerate will be limited below the default refresh rate.
 
 #### Programs:
 
-Available properties: `vs, fs, arrays, uniforms, textures, chain, gui, targets, drawMode, setupcb, rendercb, draw, clearColor, clear, on`
+Available properties: `vs, fs, uniforms, arrays, chain, gui, textures, targets, drawMode, setupcb, rendercb, draw, clearColor, clear, on`
 
-The default object [here](https://github.com/orazdow/minigl/blob/9f75e7654492d6f42e83c6548a62e3e77694702d/glview.js#L33) provides defaults for any field not present in a program. Any combination can be used; an empty object would be a viewport with a default vertex and fragment shader. For shader art the `fs` and `uniforms` fields alone will suffice. `chain` and `gui` are also commonly useful. Available settings  are explained below:
+The default [object](https://github.com/orazdow/minigl/blob/9f75e7654492d6f42e83c6548a62e3e77694702d/glview.js#L33) provides defaults for any field not present in a program. Any combination can be used; an empty object would be a viewport with a default vertex and fragment shader. For shader art the `fs` and `uniforms` fields alone will suffice. `chain` and `gui` are also commonly useful. Available settings  are explained below:
 
 **vs:** vertex shader
 
 **fs:** fragment shader
 
-
-**arrays:** sets vertex buffer data. The attribute `position` creates a vao, `indices` creates an index buffer. Any other name creates a buffer. Additionally data can be interleaved into a buffer with other attributes referring to it by name ([example]()). If an empty object is specified no vertex buffer will be created. A chained program will use the parent vao. 
-
 **uniforms:**  key : value pairs to set uniforms in the shader program
 
-**textures:** array of objects specifying textures. The fields are: `src`: image  path (or array). `uniform`: uniform name for setting correct texture unit. `type`: defaults to TEXTURE_2D, TEXTURE_2D_ARRAY can also be used. `min`, `mag`: min/mag filters default to LINEAR. `wrap_s`, `wrap_t`: wrap settings default to REPEAT. `wrap`: parameter for both. `mipmap`: generate mipmap. If only `src` is provided, the file will load a 2D texture with default settings.
+**arrays:** sets vertex buffer data. The attribute `position` creates a vao, `indices` creates an index buffer. Any other name creates a buffer. Additionally data can be interleaved into a buffer with other attributes referring to it by name [example](https://github.com/orazdow/minigl/blob/4cfaf3b0c97410ac55f19f90ba60c66f3d5b8ae8/programs/tex.js#L41). If an empty object is specified no vertex buffer will be created. A chained program will use the parent vao. 
 
 **chain:** an array of programs to draw successively. This can assigned to an object in the main file where others are imported. Chained programs will not clear the canvas unless specified. 
 
-**gui:** an object with a simplified format for creating controls. In a chain, each program's gui will be added to the gui interface of the active parent program. For usage and options see the section [below]().
+**gui:** an object with a simplified format for creating controls. In a chain, each program's gui will be added to the gui interface of the active parent program. For usage and options see the section [below](#gui).
+
+**textures:** array of objects specifying textures. The fields are: `src`: image  path (or array). `uniform`: uniform name for setting correct texture unit. `type`: defaults to TEXTURE_2D, TEXTURE_2D_ARRAY can also be used. `min`, `mag`: min/mag filters default to LINEAR. `wrap_s`, `wrap_t`: wrap settings default to REPEAT. `wrap`: parameter for both. `mipmap`: generate mipmap. If only `src` is provided, the file will load a 2D texture with default settings.
 
 **targets:** an object specifying additional render targets. Setting either of the two targets to `true` will populate an object in its place which glview will use by substituting a draw function. `texture` creates a texture and framebuffer that will be drawn to in addition to the canvas. This can be used by other programs for multi-pass effects. `renderbuffer` will do the same with a renderbuffer which is bot especially useful unless the `texture` target is also set to true. If both `texture` and `renderbuffer` are used, a backbuffer will be set up.
 
@@ -73,7 +72,6 @@ The default object [here](https://github.com/orazdow/minigl/blob/9f75e7654492d6f
 ----
 
 #### GUI
-
 
 
 [comment]: <> (gui, examples, minigl)
