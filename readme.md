@@ -2,12 +2,12 @@
 
 ##### minimal webgl library [demo]()
 
-*MiniGl* facilitates webgl programs without much setup. 
-Parameters are specified by an options object and multiple objects can be loaded or chained to create modular programs. These can be as minimal as a container for a shader or more complicated. 
+MiniGl facilitates webgl programs without much setup. 
+Parameters are specified in program objects and multiple objects can be loaded or chained to create modular programs. These can be as minimal as a container for a shader or more complicated. 
 
-The library consists of two files: **minigl.js** contains necessities for setting up a WebGL program. It uses a parameter format similar to [TWGL.js](https://twgljs.org/), and works as stripped-down version with essential functions in a single file, but in-depth texture handling, instancing and other features are not provided.  
+The library consists of two files: **minigl.js** contains necessities for setting up a WebGL program. It works as a stripped down version of [TWGL.js](https://twgljs.org/) in a single file but in-depth texture handling, instancing and other features are not provided.  
 
-**glview.js** provides a driver class that can setup a WebGL program in a single line and adds some extra functionality. Depending on the options in objects passed to it, programs can be set up with backbuffers or other render targets, chained together, given setup and render callbacks, or have other defaults overridden. Objects containing a simplified spec to setup gui controls can be specified as well which integrates with [dat.gui](https://github.com/dataarts/dat.gui). 
+**glview.js** provides a driver class that can setup WebGL programs in a one line and adds extra functionality depending on the options passed to it. Programs can be set up with backbuffers or other targets, chained together, and integrated with [dat.gui](https://github.com/dataarts/dat.gui). 
 
 ---
 #### Usage: GLview
@@ -37,15 +37,25 @@ If `fps` > 0 the framerate will be limited below the default refresh rate.
 
 Available properties: `vs, fs, uniforms, arrays, chain, gui, textures, targets, drawMode, setupcb, rendercb, draw, clearColor, clear, on`
 
-The default [object](https://github.com/orazdow/minigl/blob/9f75e7654492d6f42e83c6548a62e3e77694702d/glview.js#L33) provides defaults for any field not present in a program. Any combination can be used; an empty object would be a viewport with a default vertex and fragment shader. For shader art the `fs` and `uniforms` fields alone will suffice. `chain` and `gui` are also commonly useful. Available settings  are explained below:
+```
+const pgm = {
+    fs: fs,
+    uniforms:{
+        light: .5,
+        angle: [.3,-.3]
+    }
+};
+```
 
-**vs:** vertex shader
+A template [object](https://github.com/orazdow/minigl/blob/9f75e7654492d6f42e83c6548a62e3e77694702d/glview.js#L33) provides defaults for any field not present in a program. Any combination of properties can be used; an empty object would be a viewport with a default vertex and fragment shader. For shader art the `fs` and `uniforms` fields alone will suffice. `chain` and `gui` are also commonly useful. Available settings  are explained below:
 
-**fs:** fragment shader
+**vs:** vertex shader string
+
+**fs:** fragment shader string
 
 **uniforms:**  key : value pairs to set uniforms in the shader program
 
-**arrays:** sets vertex buffer data. The attribute `position` creates a vao, `indices` creates an index buffer. Any other name creates a buffer. Additionally data can be interleaved into a buffer with other attributes referring to it by name [example](https://github.com/orazdow/minigl/blob/4cfaf3b0c97410ac55f19f90ba60c66f3d5b8ae8/programs/tex.js#L41). If an empty object is specified no vertex buffer will be created. A chained program will use the parent vao. 
+**arrays:** sets vertex buffer data. The attribute `position` creates a vao, `indices` creates an index buffer. Any other name creates a vertex buffer. Additionally data can be interleaved into a buffer with other attributes referring to it by name [example](https://github.com/orazdow/minigl/blob/4cfaf3b0c97410ac55f19f90ba60c66f3d5b8ae8/programs/tex.js#L41). If an empty object is specified no buffers will be created and the last bound vao is used. 
 
 **chain:** an array of programs to draw successively. This can assigned to an object in the main file where others are imported. Chained programs will not clear the canvas unless specified. 
 
