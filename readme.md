@@ -5,9 +5,9 @@
 MiniGl facilitates webgl programs without much setup. 
 Parameters are specified in program objects and multiple objects can be loaded or chained to create modular programs. These can be as minimal as a container for a shader or more complicated. 
 
-The library consists of two files: **minigl.js** contains necessities for setting up a WebGL program. It works as a stripped down version of [TWGL.js](https://twgljs.org/) in a single file but in-depth texture handling, instancing and other features are not provided.  
+The library consists of two files: **minigl.js** contains necessities for setting up a WebGL program. It works as a stripped down version of [TWGL.js](https://twgljs.org/) but many features are not provided.  
 
-**glview.js** provides a driver class that can setup WebGL programs in a one line and adds extra functionality depending on the options passed to it. Programs can be set up with backbuffers or other targets, chained together, and integrated with [dat.gui](https://github.com/dataarts/dat.gui). 
+**glview.js** provides a driver class to setup WebGL programs and adds extra functionality. Depending on the options passed to it, programs can be set up with backbuffers or other targets, chained together, and integrated with [dat.gui](https://github.com/dataarts/dat.gui). 
 
 ---
 #### Usage: GLview
@@ -31,6 +31,28 @@ If `fps` > 0 the framerate will be limited below the default refresh rate.
 
 **methods:** `start()`, `stop()`, `frame(time)`, `switchProgram(index)`
 
+Example:
+
+```
+import Glview from './glview.js';
+
+const fs = `#version 300 es
+    precision mediump float;
+    uniform vec2 resolution;
+    uniform float time;
+    out vec4 fragColor;
+    
+    void main(){
+        vec3 c = cos(time+gl_FragCoord.xyx*.002*vec3(0,2,3))*.5+.5;
+        fragColor = vec4(c, 1);
+    }
+`;
+
+const canvas = document.querySelector('canvas');
+const glview = new Glview(canvas, {fs: fs});
+glview.start();
+```
+
 ---
 
 #### Programs:
@@ -43,7 +65,8 @@ const pgm = {
     uniforms:{
         light: .5,
         angle: [.3,-.3]
-    }
+    },
+    gui: gui
 };
 ```
 
