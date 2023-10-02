@@ -3,9 +3,9 @@
 ##### minimal webgl library [demo]()
 
 MiniGl facilitates webgl programs without much setup. 
-Parameters are specified in program objects and multiple objects can be loaded or chained to create modular programs. These can be as minimal as a container for a shader or more complicated. 
+Parameters are specified in program objects and multiple objects can be loaded or chained to create modular programs. These can be as minimal as a container for a shader or use more complicated options. 
 
-The library consists of two files: **minigl.js** contains necessities for setting up a WebGL program. It works as a stripped down version of [TWGL.js](https://twgljs.org/) but many features are not provided.  
+The library consists of two files: **minigl.js** contains necessities for setting up a WebGL program. It works similar to a stripped down version of [TWGL.js](https://twgljs.org/) but many features are not provided.  
 
 **glview.js** provides a driver class to setup WebGL programs and adds extra functionality. Depending on the options passed to it, programs can be set up with backbuffers or other targets, chained together, and integrated with [dat.gui](https://github.com/dataarts/dat.gui). 
 
@@ -84,9 +84,9 @@ A template [object](https://github.com/orazdow/minigl/blob/9f75e7654492d6f42e83c
 
 **gui:** an object with a simplified format for creating controls. In a chain, each program's gui will be added to the gui interface of the active parent program. For usage and options see the section [below](#gui).
 
-**textures:** array of objects specifying textures. The fields are: `src`: image  path (or array). `uniform`: uniform name for setting correct texture unit. `type`: defaults to TEXTURE_2D, TEXTURE_2D_ARRAY can also be used. `min`, `mag`: min/mag filters default to LINEAR. `wrap_s`, `wrap_t`: wrap settings default to REPEAT. `wrap`: parameter for both. `mipmap`: generate mipmap. If only `src` is provided, the file will load a 2D texture with default settings.
+**textures:** array of texture objects. The fields are: `src`: image  path (or array). `uniform`: uniform name for setting correct texture unit. `type`: defaults to TEXTURE_2D, TEXTURE_2D_ARRAY can also be used. `min`, `mag`: min/mag filters default to LINEAR. `wrap_s`, `wrap_t`: wrap settings default to REPEAT. `wrap`: parameter for both. `mipmap`: generate mipmap. If only `src` is provided, the file will load a 2D texture with default settings.
 
-**targets:** an object specifying additional render targets. Setting either of the two targets to `true` will populate an object in its place which glview will use by substituting a draw function. `texture` creates a texture and framebuffer that will be drawn to in addition to the canvas. This can be used by other programs for multi-pass effects. `renderbuffer` will do the same with a renderbuffer which is bot especially useful unless the `texture` target is also set to true. If both `texture` and `renderbuffer` are used, a backbuffer will be set up.
+**targets:** specifies additional render targets. Setting either of the two targets to `true` will populate an object in its place. Glview will use a corresponding draw function. `texture` creates a texture target in addition to the canvas to be used by other programs. If both `texture`and `renderbuffer` targets are set to true a backbuffer will be set up.
 
 **drawMode:** the draw mode to use: i.e `TRIANGLES` , `TRIANGLE_STRIP`
 
