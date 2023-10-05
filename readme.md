@@ -129,3 +129,133 @@ A template [object](https://github.com/orazdow/minigl/blob/9f75e7654492d6f42e83c
 ----
 
 #### GUI
+
+<div style="line-height:1.3">
+
+Gui objects have the following properties: 
+
+`name`: *str*, `open`: *bool*, `updateFrame`: *bool*, `switch`: bool, `fields`: *array*
+
+`fields` is an array of objects specifying controls with the format:
+
+<div style="line-height:1">
+
+---
+
+**(name) : initial value**, 
+
+**min : min value** (opt),
+
+**max : max value** (opt),
+
+**step : step value** (opt),
+
+**onChange : function**
+
+---
+
+</div>
+
+If **min** and **max** are not present, the control will be an input field, checkbox, or button depending on the initial value type (number/string, boolean, function)
+
+The most common use of **onChange** is to set the program object's uniform values:
+
+```js
+onChange: (v)=>{ prog.uniforms.a = v; } 
+```
+
+A shorthand format can replace the min, max, step fields if the initial value is an array:
+
+```js
+{
+    alpha: [.5, 0, 1, .01],
+    onChange: v => {prog.uniforms.alpha = v;}
+}
+```
+
+An object in `fields` can itself be a gui object with its own `fields` property, meaning you can recursively nest folders.
+
+
+</div>
+
+The `name` property of the gui object sets the folder name that controls in `fields` are children of. `open` sets whether the folder is open by default. `updateFrame` will make GLview render a frame when a control is changed if the render loop is stopped. `switch` adds a toggle to disable the program using the gui.
+
+<div>
+
+<details>
+<summary>example:</summary>
+
+```js
+const gui = {
+    name: 'wave',
+    open: true,
+    updateFrame: true,
+    fields: [
+        {
+            amp: 1,
+            min: .5,
+            max: 5,
+            step: .1,
+            onChange: (v)=>{
+                prog.uniforms.amp = v;
+            }
+        },
+        {
+            lightx: [.2,0,1,.1],
+            onChange: v => {prog.uniforms.light[0] = v;}
+        },
+        {
+            lighty: [.5,0,1,.1],
+            onChange: v => {prog.uniforms.light[1] = v;}
+        },
+        {
+            invert: false,
+            onChange: (v)=>{
+                prog.uniforms.invert = +v;
+            }
+        },
+        {
+            name: 'hsv',
+            open: false,
+            updateFrame: true,
+            fields: [
+                {
+                    h: [.7, 0, 1, .01],
+                    onChange: v => {
+                        hsv[0] = v;
+                        prog.uniforms.c = hsv2rgb(...hsv);
+                    }
+                },
+                {
+                    s: [.8, 0, 1, .01],
+                    onChange: v => {
+                        hsv[1] = v;
+                        prog.uniforms.c = hsv2rgb(...hsv);
+                    }
+                },
+                {
+                    v: [.5, 0, 1, .01],
+                    onChange: v => {
+                        hsv[2] = v;
+                        prog.uniforms.c = hsv2rgb(...hsv);
+                    }
+                },
+            ]
+        }
+
+    ]
+};
+```
+</details>
+
+</div>
+
+
+
+
+
+
+
+
+
+
