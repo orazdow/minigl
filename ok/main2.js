@@ -114,7 +114,7 @@ const pgm = {
         mat4.perspective(pgm.uniforms.pmat, fov, pgm.res[0] / pgm.res[1], 0.05, 20);
         mat4.lookAt(pgm.uniforms.vmat,[eye.x, eye.y, eye.z],[0, eye.tx, eye.tz],[0, 1, 0]);
         // depth
-        mat4.perspective(pgm.light.pmat, 1, pgm.res[0]/pgm.res[1], 1, 22);
+        mat4.perspective(pgm.light.pmat, 1, pgm.res[0]/pgm.res[1], .1, 9);
         moveLightMat(pgm.light);
     },
     sub: [modelp],
