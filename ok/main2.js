@@ -52,7 +52,7 @@ const modelp = {
     render: orbit
 };
 
-// --- bkgd plane
+// -- bkgd plane
 const pgm = {
     arrays: {
         position: {
