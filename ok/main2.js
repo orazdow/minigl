@@ -193,6 +193,7 @@ const gui = {
         ]
     },{
         name: 'lighta',
+        open: true,
         fields: [
             {
                 x: [pgm.light.pos[0], -2, 2, .01],
@@ -252,6 +253,13 @@ const gui = {
     },
     {
         camview_x: [eye.tx, -2, 2, 0.1],
+        onChange: (v)=>{
+            eye.x = v;
+            mat4.lookAt(pgm.uniforms.vmat,[eye.x, eye.y, eye.z],[eye.tx, eye.ty, eye.tz],[0, 1, 0]);
+        }
+    },
+    {
+        camview_tx: [eye.tx, -2, 2, 0.1],
         onChange: (v)=>{
             eye.tx = v;
             mat4.lookAt(pgm.uniforms.vmat,[eye.x, eye.y, eye.z],[eye.tx, eye.ty, eye.tz],[0, 1, 0]);
