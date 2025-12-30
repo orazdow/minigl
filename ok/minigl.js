@@ -112,7 +112,7 @@ function loadTextures(gl, obj){
     window.texindex ??= 0; 
     for(let o of obj.textures || []){
         if(!o || !o.src) return;
-        o.index = window.texindex++;
+        o.index ??= window.texindex++;
         if(!o.type || o.type === 'TEXTURE_2D') 
             loadTexture2D(gl, obj, o);
     }
