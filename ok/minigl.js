@@ -174,8 +174,8 @@ function setSubPgms(gl, pgm, inherit = true){
         sub.setup ??= ()=>{};
         sub.render ??= ()=>{};
         sub.targets ??= ()=>{};
-        sub.uniforms ??= pgm.uniforms;
-        if(inherit) for(let u in pgm.uniforms) sub.uniforms[u] ??= pgm.uniforms[u]; 
+        if(inherit) Object.setPrototypeOf((sub.uniforms ??= {}), pgm.uniforms);
+        else sub.uniforms ??= pgm.uniforms;
         sub.shader ??= pgm.shader;
         if(!sub.shader.program) createShaderProgram(gl, sub);  
         sub.setup(gl, sub);
