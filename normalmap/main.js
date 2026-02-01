@@ -89,8 +89,8 @@ const modelp = {
     setup: (gl, pgm)=>{
         // let model = loadObj(tetra, .5, true);
         // let model = loadObj(solids.icosahedron, 0.28, true, true);
-        // let model = loadObj(models.cow, 0.1, true, true);
-        let model = loadObj(models.salamander, 0.1, true, true);
+        let model = loadObj(models.cow, 0.1, true, true);
+        // let model = loadObj(models.salamander, 0.1, true, true);
         getTangents(model)
         console.log(model)
         mdata(model,
