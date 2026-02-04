@@ -6,17 +6,12 @@ import initGui from "./lib/gui.js";
 import {solids, polyhedra, models} from './model.js';
 
 const {PI, cos, sin, min, max} = Math;
-
 var gl,req, res = [600, 600], mouse = [0, 0];
-var fov = 0.8;
-var r = 0.7;
-var drawTetra = true;
-var orthoshadowmat = false;
+var r = 0.4;
 const eye = {
     pos:  [0, 0, 3],
     target: [0, 0, -.5]
 };          
-
 
 const pointlight = {
     s_trim: .2,
@@ -32,7 +27,6 @@ function moveLightMat(light) {
 
 function setView(vmat, v3Pos, v3Target){
     mat4.lookAt(vmat, v3Pos, v3Target, [0, 1, 0]);
-
 }
 
 // load model data
@@ -48,6 +42,7 @@ function mdata(model, position, normal, texcoord, tangent) {
 
 }
 
+// --- model
 const modelp = {
     arrays: {
         position: {
@@ -72,7 +67,8 @@ const modelp = {
         mmat: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
         rmat: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
         cow_tex: 2,
-        useTex: 0
+        useTex: 1,
+        useNorm: 0
     },
     textures: [
         {
@@ -85,14 +81,13 @@ const modelp = {
             index: 3,
             src: './pebbles.png'
         }
-],
+    ],
     setup: (gl, pgm)=>{
         // let model = loadObj(tetra, .5, true);
         // let model = loadObj(solids.icosahedron, 0.28, true, true);
-        let model = loadObj(models.cow, 0.1, true, true);
         // let model = loadObj(models.salamander, 0.1, true, true);
+        let model = loadObj(models.cow, 0.1, true, true);
         getTangents(model)
-        console.log(model)
         mdata(model,
               pgm.arrays.position.data,
               pgm.arrays.normal.data,
@@ -100,12 +95,11 @@ const modelp = {
               pgm.arrays.tangent.data);
         mat4.fromTranslation(pgm.uniforms.mmat, [0,0,pgm.z]);
         mgl.loadTextures(gl, pgm)
-        console.log(pgm)
     },
     render: orbit
 };
 
-// -- bkgd plane
+// --- bkgd plane
 const pgm = {
     arrays: {
         position: {
@@ -141,12 +135,12 @@ const pgm = {
     uniforms: {
         scale: 1.5,
         useTex: 0,
+        useNorm: 1,
         depth_tex: 0,
         mmat: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
         pmat: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
         vmat: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-        rmat: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-        
+        rmat: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],       
         lpmat: pointlight.pmat,
         lvmat: pointlight.vmat,
         viewpos: eye.pos,
@@ -159,7 +153,7 @@ const pgm = {
             diff: .7,
             dz: 0,
             am: 0,
-            lev: 1
+            atten: .5
         },
     },
     ra: 0,
@@ -168,7 +162,7 @@ const pgm = {
     a_hsv: [0,1,1],
     setup: (gl, pgm) => {
         mat4.fromTranslation(pgm.uniforms.mmat, [0, 0, -1]);
-        mat4.perspective(pgm.uniforms.pmat, fov, pgm.res[0] / pgm.res[1], 0.05, 20);
+        mat4.perspective(pgm.uniforms.pmat, 0.8, pgm.res[0] / pgm.res[1], 0.05, 20);
         setView(pgm.uniforms.vmat, eye.pos, eye.target, [0, 1, 0]);
         // depth
         mat4.perspective(pgm.light.pmat, 1, pgm.res[0]/pgm.res[1], .14, 8);
@@ -189,9 +183,10 @@ const pgm = {
 function orbit(gl, pgm) {
     let x = pgm.uniforms.mouse[0] - 0.5;
     let y = pgm.uniforms.mouse[1] - 0.5;
-    mat4.rotate(pgm.uniforms.rmat, pgm.uniforms.rmat, r * Math.min(0.05 * Math.hypot(x, y), 0.05), [y, -x, 0]);
+    mat4.rotate(pgm.uniforms.rmat, pgm.uniforms.rmat, r * 0.1 * Math.hypot(x, y), [y, -x, 0]);
 }
 
+// ---
 const gui = {
   name: 'ctl',
   open: 1,
@@ -279,8 +274,8 @@ const gui = {
                 onChange: v =>{pgm.uniforms.lighta.am = v;}
             },
             {
-                lev: [pgm.uniforms.lighta.lev, 0, 1.5, .01],
-                onChange: (v)=>{pgm.uniforms.lighta.lev = v;}
+                atten: [pgm.uniforms.lighta.atten, 0, 1, .01],
+                onChange: (v)=>{pgm.uniforms.lighta.atten = v;}
             },
             {
                 hue: [pgm.a_hsv[0], 0, 1, .001],
@@ -296,7 +291,7 @@ const gui = {
         ]
     },
     {
-        tetra_z: [pgm.sub[0].z, -2, 2, .01],
+        tetra_z: [pgm.sub[0].z, -2, 3, .01],
         onChange: (v)=>{
             pgm.sub[0].z = v;
              mat4.fromTranslation(pgm.sub[0].uniforms.mmat, [0,0,pgm.sub[0].z]);
@@ -329,26 +324,7 @@ const gui = {
 };
 
 // ---
-function draw(gl, pgm, time) {
-
-    pgm.uniforms.time = time * 0.001;
-    pgm.uniforms.mouse = mouse;
-    let p = pgm.sub[0]
-    mgl.useProgram(gl, pgm);
-
-    pgm.render(gl, pgm);
-    mgl.enableAttributes(gl, pgm);
-    mgl.setUniforms(gl, pgm);
-    mgl.drawObj(gl, pgm);
-
-    p.render(gl, p);
-    mgl.enableAttributes(gl, p);
-    mgl.setUniforms(gl, p);
-    mgl.drawObj(gl, p);
-
-}
-
-function _draw(gl, pgm, time){
+function draw(gl, pgm, time){
     pgm.uniforms.time = time * 0.001;
     pgm.uniforms.mouse = mouse;
     let p = pgm.sub[0]
@@ -362,7 +338,6 @@ function _draw(gl, pgm, time){
     mgl.setUniforms(gl, pgm);
     mgl.drawObj(gl, pgm);
 
-    p.shader = pgm.shader
     p.render(gl, p);
     mgl.enableAttributes(gl, p);
     mgl.setUniforms(gl, p);
@@ -383,6 +358,7 @@ function _draw(gl, pgm, time){
 
 }
 
+// ---
 function init(canvas, w, h, pgm, render, gui = {}) {
     canvas.width = res[0];
     canvas.height = res[1];
@@ -401,7 +377,6 @@ function init(canvas, w, h, pgm, render, gui = {}) {
     gl.frontFace(gl.CCW)
     // gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
     gl.viewport(0, 0, w, h);
-
     pgm.res = [w, h];
     pgm.uniforms.resolution = pgm.res;
     pgm.uniforms.mouse = mouse;
@@ -426,4 +401,4 @@ function hsv2rgb(h,s,v){
     return [f(5),f(3),f(1)];
 }
 
-init(document.querySelector("canvas"), ...res, pgm, _draw, gui);
+init(document.querySelector("canvas"), ...res, pgm, draw, gui);
