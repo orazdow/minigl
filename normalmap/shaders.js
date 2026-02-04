@@ -1,7 +1,6 @@
 // -*- mode: glsl -*-
 
 const light_vs = /*glsl*/ `#version 300 es
-
     precision mediump float;
     layout(location = 0) in vec4 position;
     layout(location = 1) in vec4 normal;
@@ -27,12 +26,11 @@ const light_vs = /*glsl*/ `#version 300 es
         float diff;
         float dz;
         float am;
-        float lev;
+        float atten;
     };
-
     uniform Light lighta;
-    out Light alight;
 
+    out Light alight;
     out vec3 vnormal;
     out vec3 vpos;
     out vec4 lvpos;
@@ -41,7 +39,7 @@ const light_vs = /*glsl*/ `#version 300 es
 
     void main(){
         vec4 pos = vec4(vec3(scale),1)*position*rmat;
-        vnormal = normalize(normal*rmat).xyz;
+        vnormal = (normal*rmat).xyz;
         pos = mmat*pos;
         alight = lighta;
         alight.dir = alight.pos - pos.xyz;
@@ -51,7 +49,7 @@ const light_vs = /*glsl*/ `#version 300 es
         vtexcoord = texcoord;
 
         vec3 t = normalize((vec4(tangent.xyz, 0.)*rmat).xyz);
-        vec3 b = cross(vnormal, t)*tangent.w;
+        vec3 b = cross(normalize(vnormal), t)*tangent.w;
         tbn = mat3(t, b, vnormal);
     }
 
@@ -66,6 +64,7 @@ const light_fs = /*glsl*/ `#version 300 es
     uniform sampler2D cow_tex;
     uniform sampler2D normal_map;
     uniform float useTex;
+    uniform float useNorm;
 
     struct Light {
         vec3 pos;
@@ -76,25 +75,24 @@ const light_fs = /*glsl*/ `#version 300 es
         float diff;
         float dz;
         float am;
-        float lev;
+        float atten;
     };
+
     in Light alight;
     in vec3 vnormal;
     in vec3 vpos;
     in vec4 lvpos;
     in vec2 vtexcoord;
     in mat3 tbn;
-
     out vec4 fragColor;
 
-    float lighting(vec3 vnorm, vec3 lpos, vec3 vpos, float p, float s, float d, float dz, float am){
+    float lighting(vec3 vnorm, vec3 lpos, vec3 vpos, float p, float s, float d, float dz, float am, float atn){
         vec3 light = normalize(lpos);
         vec3 ray = reflect(-light, vnorm);
         float spec = pow(max(0., dot(ray, vpos)) ,p);
         float diff = max(0., dot(vec3(light.xy,light.z+dz), vnorm));
         float ld = max(1., length(lpos));
-        float la = .1;
-        float atten = 1./ (1. + la* (.7*ld*ld + .3*ld) );
+        float atten = mix(1., 1./ (1. + .1*ld*ld), atn);
         return .3*am + atten*(d*diff + s*spec);
     }
 
@@ -106,13 +104,12 @@ const light_fs = /*glsl*/ `#version 300 es
     }
 
     void main(){
-        float t = 1.; //(sin(time)+1.2)*2.;
-        vec3 tnorm = texture(normal_map, vtexcoord).xyz;
+        vec3 tnorm = texture(normal_map, 1.2*vtexcoord).xyz;
         tnorm = normalize(tnorm*2. -1.);
-        vec3 worldNormal = normalize(tbn * tnorm);
-        float l = lighting(worldNormal, alight.dir, vpos, alight.pow, alight.spec, alight.diff, alight.dz, alight.am);
+        vec3 texnormal = mix(normalize(vnormal), (tbn * tnorm), vec3(useNorm));
+        float l = lighting(texnormal, alight.dir, vpos, alight.pow, alight.spec, alight.diff, alight.dz, alight.am, alight.atten);
         vec2 uv = (2.*gl_FragCoord.xy-resolution)/resolution.y;
-        vec3 cow = texture(cow_tex, t*3.*vtexcoord).rrr;
+        vec3 cow = texture(cow_tex, 2.*vtexcoord).rrr;
         vec3 c = l*alight.col*mix(vec3(1), cow, useTex);
         // vec3 c = l*alight.col;
         float s = shadow(lvpos);
