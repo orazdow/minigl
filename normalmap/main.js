@@ -7,7 +7,7 @@ import {solids, polyhedra, models} from './model.js';
 
 const {PI, cos, sin, min, max} = Math;
 var gl,req, res = [600, 600], mouse = [0, 0];
-var r = 0.4;
+var r = 0.333;
 const eye = {
     pos:  [0, 0, 3],
     target: [0, 0, -.5]
