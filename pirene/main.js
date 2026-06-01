@@ -2,9 +2,10 @@ import * as mgl from "./minigl.js";
 import * as mat4 from "./lib/glmat/mat4.js";
 import * as shd from "./shaders.js";
 import initGui from "./lib/gui.js";
-import {loadObj, getTangents, getDim} from "./lib/loader.js";
+import {loadObj, modelData} from "./lib/loader.js";
 import {solids, polyhedra, models} from './model.js';
 import pirene from './pirene.js';
+// import pirenejson from "./pirene.json" with { type: "json" };
 
 const {PI, cos, sin, min, max} = Math;
 const eye = {pos: [0.5, 2.2, 5.5], target: [0, .5, -.5]};        
@@ -23,19 +24,6 @@ function moveLightMat(light) {
 
 function setView(vmat, v3Pos, v3Target){
     mat4.lookAt(vmat, v3Pos, v3Target, [0, 1, 0]);
-}
-
-// load model data
-function mdata(model, position, normal, texcoord, tangent) {
-    if(position) for (let t of model.indices.v)
-        for (let i of t) position.push(...model.vertices.v[i]);
-    if(normal) for (let t of model.indices.vn)
-        for (let i of t) normal.push(...model.vertices.vn[i]);
-    if(texcoord) for (let t of model.indices.vt)
-        for (let i of t) texcoord.push(...model.vertices.vt[i]);
-    if(tangent) for(let t of model.indices.tangent)
-        for (let i of t) tangent.push(...model.vertices.tangent[i]);
-
 }
 
 const wall = {
@@ -63,19 +51,14 @@ const wall = {
         scale: 1,
         mmat: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
         rmat: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-        useNorm: 1
+        useNormalMap: 1
     },
     textures: [
     ],
     setup: (gl, pgm)=>{
-        let model = loadObj(pirene, 0.6);
-        getTangents(model);
-        mdata(model,
-              pgm.arrays.position.data,
-              pgm.arrays.normal.data,
-              pgm.arrays.texcoord.data,
-              pgm.arrays.tangent.data);
-        // pgm.pos[1] -= model.dim.ymin;
+        let model = loadObj(pirene, {scale: 0.6, fn: true, tangent: true});
+        modelData(model, pgm.arrays)
+        // modelData(pirenejson, pgm.arrays)
         mat4.fromTranslation(pgm.uniforms.mmat, pgm.pos);
     },
 };
@@ -105,18 +88,13 @@ const poly = {
         scale: 1,
         mmat: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
         rmat: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-        useNorm: 0
+        useNormalMap: 0
     },
     textures: [
     ],
     setup: (gl, pgm)=>{
-        let model = loadObj(polyhedra.triakisicosahedron, 0.3, true, true);
-        getTangents(model);
-        mdata(model,
-              pgm.arrays.position.data,
-              pgm.arrays.normal.data,
-              pgm.arrays.texcoord.data,
-              pgm.arrays.tangent.data);
+        let model = loadObj(polyhedra.triakisicosahedron, {scale: 0.3, tc: true});
+        modelData(model, pgm.arrays);
         mat4.fromTranslation(pgm.uniforms.mmat, pgm.pos);
     },
     render: orbit
@@ -192,7 +170,7 @@ const pgm = {
         scale: 3,
         bkgd: 0,
         useTex: 0,
-        useNorm: 0,
+        useNormalMap: 0,
         depth_tex: 0,
         cubemap: 2,
         normal_map: 1,
