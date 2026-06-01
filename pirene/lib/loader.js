@@ -1,12 +1,20 @@
-function loadObj(str, scale=1, hom=true, tc=false, tbn=false){
+
+// scale   : model scale
+// hom     : use homogenous coordinates
+// vn      : compute vertex normals
+// fn      : (re)compute face normals
+// tc      : generate texcoords (spherical)
+// tangent : compute tangets 
+
+function loadObj(str, {scale=1, hom=true, vn=false, fn=false, tc=false, tangent=false}={}){
     let obj = {
-        vertices: {v:[], vt:[], vn:[]},
+        vertices: {v:[], vt:[], vn:[], tangent:[]},
         elements: {
             p:{v:[], vt:[], vn:[]},
             l:{v:[], vt:[], vn:[]}, 
-            f:{v:[], vt:[], vn:[]}
+            f:{v:[], vt:[], vn:[], tangent:[]}
         },
-        indices: {v:[], vt:[], vn:[]}
+        indices: {v:[], vt:[], vn:[], tangent:[]}
     };
     let a = str.split('\n');
     for(let s of a){
@@ -61,20 +69,12 @@ function loadObj(str, scale=1, hom=true, tc=false, tbn=false){
                 if(vn.length) f.vn.push(vn);
         }
     }
+
     
-    // if(!obj.elements.f.vn.length){
-    //     let vi = 0, v = obj.vertices.v;
-    //     for(let f of obj.elements.f.v){
-    //         let v1 = subv(v[f[0]], v[f[1]])
-    //         let v2 = subv(v[f[1]], v[f[2]])
-    //         let n = normalize(cross(v1,v2));
-    //         if(hom) n[3] = 1;
-    //         obj.vertices.vn.push(n);
-    //         obj.elements.f.vn.push([vi, vi, vi]);
-    //         vi++;
-    //     }     
-    // }
-    computeNormals(obj)
+    if(fn || !obj.elements.f.vn.length)
+        computeNormals(obj, vn);
+
+    if(tangent) getTangents(obj);
 
    // synthestic texcoords --spherical 
    if(tc && !obj.elements.f.vt.length){
@@ -96,7 +96,7 @@ function loadObj(str, scale=1, hom=true, tc=false, tbn=false){
     return obj;
 }
 
-function computeNormals(obj, vn=0){
+function computeNormals(obj, vn=0){ 
     let _vn = [], _fvn = [];
     let vmap = {};
     let vi = 0, v = obj.vertices.v;
@@ -116,6 +116,7 @@ function computeNormals(obj, vn=0){
     }
     obj.vertices.vn = _vn;
     obj.elements.f.vn = _fvn;
+    // slow for large models
     if(vn){
         for(let v in vmap) vmap[v] = [...averagev(vmap[v]),1];
         obj.vertices.vn = Object.values(vmap);
@@ -130,9 +131,6 @@ function computeNormals(obj, vn=0){
 }
 
 function getTangents(obj){
-    obj.vertices.tangent = [];
-    obj.elements.f.tangent = [];
-    obj.indices.tangent = [];
     let v = obj.vertices.v;
     let vt = obj.vertices.vt;
     let idx = 0;
@@ -157,12 +155,22 @@ function getTangents(obj){
         // orthogonalize
         tn = subv(tn, mults(n, dot(n, tn)));
         let tangent = [...normalize(tn), sign];
-        // let btn = normalize(cross(n, tn));
         obj.vertices.tangent.push(tangent, tangent, tangent);
         obj.elements.f.tangent.push([idx,  idx+1, idx+2]);
         obj.indices.tangent.push([idx,  idx+1, idx+2]);
         idx += 3;
     }        
+}
+
+function modelData(model, {position, normal, texcoord, tangent}){
+    if(position) for (let t of model.indices.v)
+        for (let i of t) position.data.push(...model.vertices.v[i]);
+    if(normal) for (let t of model.indices.vn)
+        for (let i of t) normal.data.push(...model.vertices.vn[i]);
+    if(texcoord) for (let t of model.indices.vt)
+        for (let i of t) texcoord.data.push(...model.vertices.vt[i]);
+    if(tangent) for(let t of model.indices.tangent)
+        for (let i of t) tangent.data.push(...model.vertices.tangent[i]);
 }
 
 function getDim(obj){
@@ -233,6 +241,7 @@ function adds(v, s){
 }
 function averagev(a){
     let v = [0,0,0];
+    // should loop for any len
     v = addv(v, a[0]);
     v = addv(v, a[1]);
     v = addv(v, a[2]);
@@ -246,4 +255,15 @@ function sphericalUV(_v){
     return [u, v];
 }
 
-export {loadObj, edgeList, getTangents, getDim};
+function getModelJson(obj, filename){
+ // import model from "./model.json" with { type: "json" };
+    const json = JSON.stringify(obj);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+}
+
+export {loadObj, edgeList, getDim, modelData};

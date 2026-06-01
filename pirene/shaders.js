@@ -61,9 +61,7 @@ const light_fs = /*glsl*/ `#version 300 es
     uniform sampler2D depth_tex;
     uniform sampler2D normal_map;
     uniform samplerCube cubemap;
-    uniform float bkgd;
-    uniform float useTex;
-    uniform float useNorm;
+    uniform bool useNormalMap;
 
     struct Light {
         vec3 pos;
@@ -108,12 +106,15 @@ const light_fs = /*glsl*/ `#version 300 es
     }
 
     void main(){
-        vec3 tnorm = texture(normal_map, 12.*vtexcoord).xyz;
-        tnorm = normalize(tnorm*2. -1.);
-        vec3 texnormal = mix(normalize(vnormal), (tbn * tnorm), vec3(useNorm)*.5);
+        vec3 tnormal = normalize(vnormal);
+        if(useNormalMap){
+            vec3 texnorm = texture(normal_map, 12.*vtexcoord).xyz;
+            texnorm = normalize(texnorm*2. - 1.);
+            tnormal = mix(tnormal, (tbn * texnorm), 0.5);
+        }
         vec2 uv = (2.*gl_FragCoord.xy-resolution)/resolution.y;
-        float l = lighting(texnormal, alight.dir, vpos, alight.pow, alight.spec, alight.diff, alight.am, alight.atten);
-        // vec3 env = envMap(cubemap, vpos, texnormal);
+        float l = lighting(tnormal, alight.dir, vpos, alight.pow, alight.spec, alight.diff, alight.am, alight.atten);
+        // vec3 env = envMap(cubemap, vpos, tnorm);
         vec3 c = l*alight.col;
         c = mix(c, c*.2, shadow(lvpos));
         fragColor = vec4(c, 1);
